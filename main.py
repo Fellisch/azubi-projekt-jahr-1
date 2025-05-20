@@ -1,13 +1,13 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow
 from ui.board import Board
-from ui.core.confiq import Colors
+from ui.core.confiq import Colors, Constants
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Stress Game Prototype")
-        self.setFixedSize(620, 640)
+        self.setFixedSize(Constants.BOARD_WIDTH, Constants.BOARD_HEIGHT)
         self.setStyleSheet(f"background-color: {Colors.BACKGROUND};")
 
         self.board = Board()

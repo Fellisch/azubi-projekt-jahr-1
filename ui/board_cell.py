@@ -2,59 +2,44 @@ import os
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QSize
-
-CELL_SIZE = 60
-PADDING = 20
-BORDER_WIDTH = 3
+from ui.core.confiq import Constants, Colors, CellType
 
 class BoardCell(QFrame):
-    def __init__(self, image_filename=None):
+    def __init__(self, image=None, cellType=CellType.LIGHT):
         super().__init__()
-        # Set fixed size for the cell
-        self.setFixedSize(QSize(CELL_SIZE, CELL_SIZE))
-        # Use QFrame's built-in border
+        self.setFixedSize(QSize(Constants.CELL_SIZE, Constants.CELL_SIZE))
         self.setFrameStyle(QFrame.Box | QFrame.Plain)
-        self.setLineWidth(BORDER_WIDTH)
-        # Apply stylesheet for background and rounded corners
-        self.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-radius: 8px;
-                border: 3px solid #2c3e50;
-            }
-            QLabel {
+        self.setLineWidth(Constants.BORDER_WIDTH)
+        backgroundColor = Colors.CELL_BG_LIGHT if cellType == CellType.LIGHT else Colors.CELL_BG_DARK
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: {backgroundColor};
+                border: {Constants.BORDER_WIDTH}px solid {Colors.PRIMARY};
+            }}
+            QLabel {{
                 border: none;
                 background: transparent;
-            }
+            }}
         """)
 
-        # Create layout to center the image
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(PADDING, PADDING, PADDING, PADDING)
+        layout.setContentsMargins(Constants.PADDING, Constants.PADDING, Constants.PADDING, Constants.PADDING)
         layout.setAlignment(Qt.AlignCenter)
 
-        if image_filename:
-            # Load the image
-            image_path = os.path.join(os.path.dirname(__file__), "assets", image_filename)
-            pixmap = QPixmap(image_path)
+        if image:
+            imagePath = os.path.join(os.path.dirname(__file__), "assets", image)
+            pixmap = QPixmap(imagePath)
             if pixmap.isNull():
-                print(f"Failed to load image: {image_path}")
+                print(f"Failed to load image: {imagePath}")
                 return
 
-            # Scale the image to fit within the cell, accounting for padding and border
-            scaled_size = CELL_SIZE - 2 * (PADDING + BORDER_WIDTH)
-            scaled_pixmap = pixmap.scaled(
-                scaled_size,
-                scaled_size,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
+            scaledSize = Constants.CELL_SIZE - 2 * (Constants.PADDING + Constants.BORDER_WIDTH)
+            scaledPixmap = pixmap.scaled(scaledSize, scaledSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
-            # Create and configure the image label
-            self.image_label = QLabel(self)
-            self.image_label.setPixmap(scaled_pixmap)
-            self.image_label.setFixedSize(scaled_pixmap.size())
-            self.image_label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(self.image_label)
+            self.imageLabel = QLabel(self)
+            self.imageLabel.setPixmap(scaledPixmap)
+            self.imageLabel.setFixedSize(scaledPixmap.size())
+            self.imageLabel.setAlignment(Qt.AlignCenter)
+            layout.addWidget(self.imageLabel)
 
         self.setLayout(layout)

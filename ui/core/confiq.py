@@ -1,8 +1,19 @@
-class Colors:
-    PRIMARY = "#3498db"
-    BACKGROUND = "#ecf0f1"
-    PAWN = "#2ecc71"
+from enum import Enum
 
-class Constants:
-    CELL_SIZE = 50  # Size of each board cell (square)
-    IMAGE_PADDING = 8  # Padding inside each cell for the image
+class Colors:
+    PRIMARY = "#ffffff"
+    CELL_BG_LIGHT = "#f0d9b5"
+    CELL_BG_DARK = "#b58863"
+    PAWN = "#2ecc71"
+    BACKGROUND = "#ecf0f1"
+
+class Constants:    
+    CELL_SIZE = 70
+    PADDING = 8
+    BORDER_WIDTH = 3
+    BOARD_WIDTH = 640
+    BOARD_HEIGHT = 640
+
+class CellType(Enum):
+    LIGHT = "light"
+    DARK = "dark"
