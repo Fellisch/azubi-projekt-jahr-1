@@ -1,0 +1,6 @@
+# Basic dependencies, will be updated as the project grows
+# For GUI, if not using Tkinter (e.g., PyQt5, Kivy)
+# Example: PyQt5==5.15.0
+
+# For password hashing
+bcrypt 
