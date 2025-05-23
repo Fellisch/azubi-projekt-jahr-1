@@ -1,2 +1,4 @@
-sqlalchemy==2.0.30
-bcrypt==4.1.2
+sqlalchemy
+bcrypt
+dotenv
+pyodbc
