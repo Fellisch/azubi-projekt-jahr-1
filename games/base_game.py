@@ -12,12 +12,17 @@ class BaseGame(ABC):
         pass
 
     @abstractmethod
-    def make_move(self, move, player):
+    def make_move(self, piece_coord, target_coord):
         """Applies a move to the board for the given player."""
         pass
 
     @abstractmethod
-    def get_possible_moves(self, player):
+    def get_ai_move(self):
+        """Returns the AI's move based on the current board state."""
+        pass
+
+    @abstractmethod
+    def get_possible_moves(self, pieceCoord):
         """Returns a list of all possible moves for the given player."""
         pass
 
@@ -35,11 +40,6 @@ class BaseGame(ABC):
     @abstractmethod
     def evaluate_board(self, player):
         """Evaluates the board state for the Minimax algorithm from the perspective of the given player."""
-        pass
-
-    @abstractmethod
-    def get_rules(self):
-        """Returns the rules of the game as a string."""
         pass
 
     def switch_player(self):
