@@ -1,4 +1,5 @@
-from .base_game import BaseGame
+from ai.minimax import Minimax
+from games.base_game import BaseGame
 
 class TicTacToe(BaseGame):
     def __init__(self, board_size=6):
@@ -118,82 +119,101 @@ class TicTacToe(BaseGame):
                 board_str += "-" * (self.board_size * 2 - 1) + "\n"
         return board_str
 
+    # Dumme Methode zum Testen der Eingabe bevor das Frontend fertig ist.
+    def test_input(self):
+        coords = input("Enter coordinates (x,y): ")
+        x, y = coords.split(',')
+        combined_coords = (int(x), int(y))
+        game.make_move(combined_coords, self.human_player_mark)
+
 # Example Usage (for testing)
 if __name__ == '__main__':
     game = TicTacToe()
+    minimax_ai = Minimax(game, max_depth=3)  # AI with depth 3
     print(game.get_rules())
     print("Initial board:")
     print(game)
 
-    # Example moves
-    game.make_move((0, 0), game.human_player_mark) # Human
-    print(game)
-    game.make_move((1, 1), game.ai_player_mark)     # AI
-    print(game)
-    game.make_move((0, 1), game.human_player_mark) # Human
-    print(game)
-    game.make_move((1, 2), game.ai_player_mark)     # AI
-    print(game)
-    game.make_move((0, 2), game.human_player_mark) # Human
-    print(game)
-    game.make_move((1, 0), game.ai_player_mark)     # AI
-    print(game)
-    game.make_move((0, 3), game.human_player_mark) # Human - Win attempt
-    print(game)
+    # Main game loop
+    while game.check_win_condition() is None:
+        game.test_input()
+        print(game)
+        best_move = minimax_ai.find_best_move(game.ai_player_mark)
+        if best_move is not None:
+            game.make_move(best_move, game.ai_player_mark)
+        print(game)
 
-    print(f"Possible moves: {game.get_possible_moves()}")
-    print(f"Game over: {game.is_game_over()}")
-    print(f"Win condition: {game.check_win_condition()}")
-    print(f"Board evaluation for AI ({game.ai_player_mark}): {game.evaluate_board(game.ai_player_mark)}")
-    print(f"Board evaluation for Human ({game.human_player_mark}): {game.evaluate_board(game.human_player_mark)}")
 
-    # Test win
-    game_win = TicTacToe()
-    game_win.make_move((0,0), game_win.human_player_mark)
-    game_win.make_move((1,0), game_win.ai_player_mark)
-    game_win.make_move((0,1), game_win.human_player_mark)
-    game_win.make_move((1,1), game_win.ai_player_mark)
-    game_win.make_move((0,2), game_win.human_player_mark)
-    game_win.make_move((1,2), game_win.ai_player_mark)
-    game_win.make_move((0,3), game_win.human_player_mark) # Human wins
-    print("\nTest Win Scenario:")
-    print(game_win)
-    print(f"Game over: {game_win.is_game_over()}")
-    print(f"Win condition: {game_win.check_win_condition()}")
 
-    # Test draw
-    game_draw = TicTacToe()
-    marks = [game_draw.human_player_mark, game_draw.ai_player_mark]
-    idx = 0
-    for r in range(game_draw.board_size):
-        for c in range(game_draw.board_size):
-            # Create a pattern that doesn't lead to an early win for 4-in-a-row
-            if not ((r < 4 and all(game_draw.board[r][k] == marks[idx%2] for k in range(c))) or \
-                    (c < 4 and all(game_draw.board[k][c] == marks[idx%2] for k in range(r)))):
-                # A simple alternating pattern that avoids immediate wins for this test
-                # This is not a perfect draw-forcing sequence, just for filling the board.
-                if (r%2 == 0 and c%2 == 0) or (r%2 !=0 and c%2 !=0) :
-                    game_draw.make_move((r,c), marks[0]) # Human
-                else:
-                    game_draw.make_move((r,c), marks[1]) # AI
-            idx +=1
-            # This filling logic is too simple and might still result in a win.
-            # A true draw setup needs careful placement or filling all spots then checking.
-    
-    # Let's just fill the board alternatingly for a draw test, might result in a win though.
-    game_draw_simple = TicTacToe()
-    current_mark_idx = 0
-    for r_draw in range(game_draw_simple.board_size):
-        for c_draw in range(game_draw_simple.board_size):
-            if game_draw_simple.check_win_condition() is None:
-                 game_draw_simple.make_move((r_draw, c_draw), [game_draw_simple.human_player_mark, game_draw_simple.ai_player_mark][current_mark_idx])
-                 current_mark_idx = 1 - current_mark_idx # Switch mark
-            else:
-                break
-        if game_draw_simple.check_win_condition() is not None:
-            break
-    
-    print("\nTest Draw/Full Scenario:")
-    print(game_draw_simple)
-    print(f"Game over: {game_draw_simple.is_game_over()}")
-    print(f"Win condition: {game_draw_simple.check_win_condition()}") 
+    # # Example moves
+    # game.make_move((0, 0), game.human_player_mark) # Human
+    # print(game)
+    # game.make_move((1, 1), game.ai_player_mark)     # AI
+    # print(game)
+    # game.make_move((0, 1), game.human_player_mark) # Human
+    # print(game)
+    # game.make_move((1, 2), game.ai_player_mark)     # AI
+    # print(game)
+    # game.make_move((0, 2), game.human_player_mark) # Human
+    # print(game)
+    # game.make_move((1, 0), game.ai_player_mark)     # AI
+    # print(game)
+    # game.make_move((0, 3), game.human_player_mark) # Human - Win attempt
+    # print(game)
+    #
+    # print(f"Possible moves: {game.get_possible_moves()}")
+    # print(f"Game over: {game.is_game_over()}")
+    # print(f"Win condition: {game.check_win_condition()}")
+    # print(f"Board evaluation for AI ({game.ai_player_mark}): {game.evaluate_board(game.ai_player_mark)}")
+    # print(f"Board evaluation for Human ({game.human_player_mark}): {game.evaluate_board(game.human_player_mark)}")
+    #
+    # # Test win
+    # game_win = TicTacToe()
+    # game_win.make_move((0,0), game_win.human_player_mark)
+    # game_win.make_move((1,0), game_win.ai_player_mark)
+    # game_win.make_move((0,1), game_win.human_player_mark)
+    # game_win.make_move((1,1), game_win.ai_player_mark)
+    # game_win.make_move((0,2), game_win.human_player_mark)
+    # game_win.make_move((1,2), game_win.ai_player_mark)
+    # game_win.make_move((0,3), game_win.human_player_mark) # Human wins
+    # print("\nTest Win Scenario:")
+    # print(game_win)
+    # print(f"Game over: {game_win.is_game_over()}")
+    # print(f"Win condition: {game_win.check_win_condition()}")
+    #
+    # # Test draw
+    # game_draw = TicTacToe()
+    # marks = [game_draw.human_player_mark, game_draw.ai_player_mark]
+    # idx = 0
+    # for r in range(game_draw.board_size):
+    #     for c in range(game_draw.board_size):
+    #         # Create a pattern that doesn't lead to an early win for 4-in-a-row
+    #         if not ((r < 4 and all(game_draw.board[r][k] == marks[idx%2] for k in range(c))) or \
+    #                 (c < 4 and all(game_draw.board[k][c] == marks[idx%2] for k in range(r)))):
+    #             # A simple alternating pattern that avoids immediate wins for this test
+    #             # This is not a perfect draw-forcing sequence, just for filling the board.
+    #             if (r%2 == 0 and c%2 == 0) or (r%2 !=0 and c%2 !=0) :
+    #                 game_draw.make_move((r,c), marks[0]) # Human
+    #             else:
+    #                 game_draw.make_move((r,c), marks[1]) # AI
+    #         idx +=1
+    #         # This filling logic is too simple and might still result in a win.
+    #         # A true draw setup needs careful placement or filling all spots then checking.
+    #
+    # # Let's just fill the board alternatingly for a draw test, might result in a win though.
+    # game_draw_simple = TicTacToe()
+    # current_mark_idx = 0
+    # for r_draw in range(game_draw_simple.board_size):
+    #     for c_draw in range(game_draw_simple.board_size):
+    #         if game_draw_simple.check_win_condition() is None:
+    #              game_draw_simple.make_move((r_draw, c_draw), [game_draw_simple.human_player_mark, game_draw_simple.ai_player_mark][current_mark_idx])
+    #              current_mark_idx = 1 - current_mark_idx # Switch mark
+    #         else:
+    #             break
+    #     if game_draw_simple.check_win_condition() is not None:
+    #         break
+    #
+    # print("\nTest Draw/Full Scenario:")
+    # print(game_draw_simple)
+    # print(f"Game over: {game_draw_simple.is_game_over()}")
+    # print(f"Win condition: {game_draw_simple.check_win_condition()}")
