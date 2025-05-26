@@ -129,7 +129,8 @@ class TicTacToe(BaseGame):
 # Example Usage (for testing)
 if __name__ == '__main__':
     game = TicTacToe()
-    minimax_ai = Minimax(game, max_depth=3)  # AI with depth 3
+    difficulty = input("Max Depth: ") #@frontend wird ersetzt durch die Schwierigkeitseinstellung # empfohlen 1 für easy, 2 für medium, 5 für hard
+    minimax_ai = Minimax(game, max_depth=int(difficulty))
     print(game.get_rules())
     print("Initial board:")
     print(game)
