@@ -1,18 +1,23 @@
 from enum import Enum
 
 class Colors:
-    PRIMARY = "#ffffff"
-    CELL_BG_LIGHT = "#f0d9b5"
-    CELL_BG_DARK = "#b58863"
-    PAWN = "#2ecc71"
-    BACKGROUND = "#ecf0f1"
+    PRIMARY = "#FEFAE0"
+    SECONDARY = "#D4A373"
+    TERTIARY = "#FAEDCD"
+    CTA_PRIMARY = "#E9EDC9"
+    CTA_HOVER = "#CCD5AE"
+    FONT_PRIMARY = "#252422"
+    WHITE = "#FDFFFC"
+    FIRST_PLAYER = "#FB8500"
+    SECOND_PLAYER = "#8ECAE6"
 
 class Constants:    
-    CELL_SIZE = 70
-    PADDING = 8
-    BORDER_WIDTH = 3
-    BOARD_WIDTH = 640
-    BOARD_HEIGHT = 640
+    CELL_SIZE = 100
+    PADDING = 20
+    BORDER_WIDTH = 20
+    BOARD_WIDTH = 1280
+    BOARD_HEIGHT = 820
+    CELL_SPACING = 20
 
 class CellType(Enum):
     LIGHT = "light"
