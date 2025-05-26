@@ -64,6 +64,7 @@ class WindowModule(QWidget):
 
     def addChildWidget(self, widget: QWidget, x: int, y: int, pivot: Pivot = Pivot.CENTER):
         widget.setParent(self.contentFrame)
+        widget.adjustSize()  # Ensure widget sizes itself properly
 
         # Adjust y by navbar height
         y -= self.NAVBAR_HEIGHT

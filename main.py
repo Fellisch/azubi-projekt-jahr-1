@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel
 from PySide6.QtGui import QPainter, QPen, QColor
 from PySide6.QtCore import Qt
 
@@ -8,7 +8,10 @@ from ui.core.confiq import Colors, Constants
 from ui.window import WindowModule, Pivot
 from ui.rules import RulesToggle
 from ui.imageWidget import ImageWidget
-from ui.myButton import MyButton
+from ui.myButton import MyButton, ButtonType
+from ui.menuContainer import MenuContainer
+from ui.inputField import InputField
+from ui.loginForm import LoginForm
 
 class GridWindowModule(WindowModule):
     def __init__(self, *args, **kwargs):
@@ -60,12 +63,11 @@ class MainWindow(QMainWindow):
         # self.rulesToggle = RulesToggle()
         # self.windowModule.addChildWidget(self.rulesToggle, Constants.BOARD_WIDTH - 30, Constants.BOARD_HEIGHT - 30, Pivot.BOTTOM_RIGHT)
 
-        self.image = ImageWidget("notepad.svg", max_size=(300, 300))
         # self.windowModule.addChildWidget(self.image, Constants.BOARD_WIDTH / 2, Constants.BOARD_HEIGHT / 2 + 40, Pivot.CENTER)
-        self.windowModule.addChildWidget(self.image, Constants.BOARD_WIDTH / 2,Constants.BOARD_HEIGHT / 2, Pivot.CENTER)
-        btn = MyButton(text='LETS PLAY!',fontSize=46, padding='52px 70px')
-        self.windowModule.addChildWidget(btn, Constants.BOARD_WIDTH / 2,Constants.BOARD_HEIGHT / 2 + 250, Pivot.CENTER)
-
+        # btn = MyButton(text='LETS PLAY!',fontSize=46, padding='52px 70px')
+        # self.windowModule.addChildWidget(btn, Constants.BOARD_WIDTH / 2,Constants.BOARD_HEIGHT / 2 + 250, Pivot.CENTER)
+        test = LoginForm()
+        self.windowModule.addChildWidget(test, Constants.BOARD_WIDTH / 2 ,Constants.BOARD_HEIGHT / 2, Pivot.CENTER)
         
 
 if __name__ == "__main__":
