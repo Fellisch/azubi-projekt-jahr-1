@@ -5,6 +5,5 @@
 # For password hashing
 bcrypt
 sqlalchemy
-bcrypt
 dotenv
 pyodbc
