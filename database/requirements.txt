@@ -1,4 +1,0 @@
-sqlalchemy
-bcrypt
-dotenv
-pyodbc
