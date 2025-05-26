@@ -68,21 +68,26 @@ class WindowModule(QWidget):
         # Adjust y by navbar height
         y -= self.NAVBAR_HEIGHT
 
+        # Use sizeHint for pre-show dimensions
+        hint = widget.sizeHint()
+        width = hint.width()
+        height = hint.height()
+
         if pivot == Pivot.CENTER:
-            pos_x = x - widget.width() // 2
-            pos_y = y - widget.height() // 2
+            pos_x = x - width // 2
+            pos_y = y - height // 2
         elif pivot == Pivot.TOP_LEFT:
             pos_x = x
             pos_y = y
         elif pivot == Pivot.TOP_RIGHT:
-            pos_x = x - widget.width()
+            pos_x = x - width
             pos_y = y
         elif pivot == Pivot.BOTTOM_LEFT:
             pos_x = x
-            pos_y = y - widget.height()
+            pos_y = y - height
         elif pivot == Pivot.BOTTOM_RIGHT:
-            pos_x = x - widget.width()
-            pos_y = y - widget.height()
+            pos_x = x - width
+            pos_y = y - height
         else:
             pos_x = x
             pos_y = y
