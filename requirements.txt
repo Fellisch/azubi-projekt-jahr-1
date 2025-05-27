@@ -3,4 +3,7 @@
 # Example: PyQt5==5.15.0
 
 # For password hashing
-bcrypt 
+bcrypt
+sqlalchemy
+dotenv
+pyodbc
