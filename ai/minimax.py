@@ -45,11 +45,11 @@ class Minimax:
         # This game instance is controlled by the App controller and reflects the live game.
         # We must not modify it directly here, only its copies.
         current_live_game = self.game_logic_instance
-        
+
         # Determine whose turn it is in the live game to get initial moves.
         # This should be the AI's turn if this method is called correctly.
         # The piece (ai_player_role_piece) explicitly tells us who the AI is.
-        possible_first_moves = current_live_game.get_possible_moves(self.ai_player_piece)
+        possible_first_moves = current_live_game.get_all_possible_moves(self.ai_player_piece) if hasattr(current_live_game, 'get_all_possible_moves') else current_live_game.get_possible_moves(self.ai_player_piece)
 
         if not possible_first_moves:
             # print("[Minimax] No possible initial moves for AI.")
@@ -61,7 +61,7 @@ class Minimax:
         for move in possible_first_moves:
             # Create a deep copy of the current live game state to simulate this move
             simulated_game_after_ai_move = copy.deepcopy(current_live_game)
-            
+
             # Apply AI's potential move to this copied game state
             # The make_move method in game classes should handle piece placement and current_player switching.
             if simulated_game_after_ai_move.__class__.__name__ == "TicTacToe":
@@ -69,7 +69,7 @@ class Minimax:
             elif simulated_game_after_ai_move.__class__.__name__ == "Dame":
                 # Dame's moves are lists like [type, from, to, [captures]]
                 simulated_game_after_ai_move.make_move(move, self.ai_player_piece)
-            
+
             # After AI's move, it's opponent's turn (minimizing player).
             # Depth for recursive call is self.max_depth - 1 because one ply (AI's move) has been made.
             eval_score = self._minimax_recursive(simulated_game_after_ai_move, self.max_depth - 1, False, alpha, beta)
@@ -78,13 +78,13 @@ class Minimax:
             if eval_score > best_eval_score:
                 best_eval_score = eval_score
                 best_move_found = move
-            
+
             # Update alpha for the root node (AI's main maximizing turn)
             alpha = max(alpha, eval_score)
             # No beta check here at the root for pruning among the AI's first moves directly,
             # because we want to find the absolute best score for the AI from all its options.
             # Pruning happens *within* the recursive calls.
-        
+
         # print(f"[Minimax] Chosen best move: {best_move_found} with score: {best_eval_score}")
         return best_move_found
 
@@ -108,13 +108,13 @@ class Minimax:
 
         # Determine whose piece to use for getting moves for the current turn in the recursion
         current_recursive_turn_piece = self._get_current_turn_piece(game_state, is_maximizing_player_turn)
-        
+
         if current_recursive_turn_piece is None:
             # This should not happen if _get_current_turn_piece is correct
             # print("[Minimax Error] Could not determine piece for recursive turn.")
             return 0 # Or some neutral/error value
 
-        possible_moves = game_state.get_possible_moves(current_recursive_turn_piece)
+        possible_moves = game_state.get_all_possible_moves(current_recursive_turn_piece) if hasattr(game_state, 'get_all_possible_moves') else game_state.get_possible_moves(current_recursive_turn_piece)
 
         if not possible_moves:
             # No moves possible for the current player at this state, but game not over by depth/win condition.
@@ -135,7 +135,7 @@ class Minimax:
                     next_game_state.make_move(move, current_recursive_turn_piece)
                 elif next_game_state.__class__.__name__ == "Dame":
                     next_game_state.make_move(move, current_recursive_turn_piece)
-                
+
                 evaluation = self._minimax_recursive(next_game_state, depth - 1, False, alpha, beta)
                 max_eval = max(max_eval, evaluation)
                 alpha = max(alpha, evaluation)
