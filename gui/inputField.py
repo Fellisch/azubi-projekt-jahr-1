@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QLineEdit
 from PySide6.QtCore import QSize
-from ui.core.confiq import Colors
+from gui.core.confiq import Colors
 
 class InputField(QLineEdit):
     def __init__(

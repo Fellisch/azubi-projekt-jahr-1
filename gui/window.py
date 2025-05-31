@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame, QSizePolicy, QHBoxLayout
 from PySide6.QtCore import Qt
 from enum import Enum, auto
-from ui.core.confiq import Colors
+from gui.core.confiq import Colors
 from PySide6.QtGui import QFontDatabase, QFont
 import os
 

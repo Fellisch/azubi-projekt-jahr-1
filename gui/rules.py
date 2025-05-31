@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QFrame
-from ui.rule import Rule  # import Rule class
-from ui.core.test_confiq import RULES
-from ui.core.confiq import Colors
+from gui.rule import Rule  # import Rule class
+from gui.core.test_confiq import RULES
+from gui.core.confiq import Colors
 
 class RulesToggle(QWidget):
     def __init__(self, violated_ids=None):

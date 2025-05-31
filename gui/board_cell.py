@@ -1,12 +1,14 @@
 import os
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QGraphicsDropShadowEffect
-from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtGui import QPixmap, QColor, QMouseEvent
 from PySide6.QtCore import Qt, QSize
-from ui.core.confiq import Constants, Colors, CellType
+from gui.core.confiq import Constants, Colors, CellType
+from gui.signalBus import bus
 
 class BoardCell(QFrame):
-    def __init__(self, image=None, cellType=CellType.LIGHT):
+    def __init__(self, image=None, cellType=CellType.LIGHT, position=None):
         super().__init__()
+        self.position = position
         self.setFixedSize(QSize(Constants.CELL_SIZE, Constants.CELL_SIZE))
         self.setCursor(Qt.PointingHandCursor)
 
@@ -22,31 +24,56 @@ class BoardCell(QFrame):
             }}
         """)
 
-        # Add shadow effect (box-shadow: 0px 4px 4px 0px #00000040)
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setOffset(0, 4)                      # vertical offset 4px, horizontal 0
-        shadow.setBlurRadius(4)                     # blur radius 4px
-        shadow.setColor(QColor(0, 0, 0, 64))       # black color with ~25% opacity (64 out of 255)
+        shadow.setOffset(0, 4)
+        shadow.setBlurRadius(4)
+        shadow.setColor(QColor(0, 0, 0, 64))
         self.setGraphicsEffect(shadow)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(Constants.PADDING, Constants.PADDING, Constants.PADDING, Constants.PADDING)
         layout.setAlignment(Qt.AlignCenter)
 
-        if image:
-            imagePath = os.path.join(os.path.dirname(__file__), "assets", image)
-            pixmap = QPixmap(imagePath)
-            if pixmap.isNull():
-                print(f"Failed to load image: {imagePath}")
-                return
-
-            scaledSize = Constants.CELL_SIZE - 2 * (Constants.PADDING)
-            scaledPixmap = pixmap.scaled(scaledSize, scaledSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
-            self.imageLabel = QLabel(self)
-            self.imageLabel.setPixmap(scaledPixmap)
-            self.imageLabel.setFixedSize(scaledPixmap.size())
-            self.imageLabel.setAlignment(Qt.AlignCenter)
-            layout.addWidget(self.imageLabel)
+        self.imageLabel = QLabel(self)
+        layout.addWidget(self.imageLabel)
 
         self.setLayout(layout)
+
+        if image:
+            self.set_image(image)
+        else:
+            self.imageLabel.clear()
+
+    def _find_image_path(self, root_dir, image_name):
+        for dirpath, _, filenames in os.walk(root_dir):
+            if image_name in filenames:
+                return os.path.join(dirpath, image_name)
+        return None
+
+    def set_image(self, image):
+        if not image:
+            self.imageLabel.clear()
+            return
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        assets_dir = os.path.join(base_dir, "assets")
+        imagePath = self._find_image_path(assets_dir, image)
+        if not imagePath:
+            self.imageLabel.clear()
+            return
+
+        pixmap = QPixmap(imagePath)
+        if pixmap.isNull():
+            self.imageLabel.clear()
+            return
+
+        scaledSize = Constants.CELL_SIZE - 2 * Constants.PADDING
+        scaledPixmap = pixmap.scaled(scaledSize, scaledSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.imageLabel.setPixmap(scaledPixmap)
+        self.imageLabel.setFixedSize(scaledPixmap.size())
+        self.imageLabel.setAlignment(Qt.AlignCenter)
+        self.update()
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            bus.cellClicked.emit(self.position)

@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QLabel
-from ui.menuContainer import MenuContainer
-from ui.inputField import InputField
-from ui.myButton import MyButton, ButtonType
-from ui.core.confiq import Colors
+from gui.menuContainer import MenuContainer
+from gui.inputField import InputField
+from gui.myButton import MyButton, ButtonType
+from gui.core.confiq import Colors
 
 class LoginForm(MenuContainer):
     def __init__(self, parent=None):

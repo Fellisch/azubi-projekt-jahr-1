@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QLabel
-from ui.core.confiq import Colors
+from gui.core.confiq import Colors
 class Rule(QLabel):
     def __init__(self, rule_id: int, text: str, bold=False, parent=None):
         super().__init__(parent)

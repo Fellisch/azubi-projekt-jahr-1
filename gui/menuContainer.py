@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QFrame, QVBoxLayout
 from PySide6.QtCore import Qt, QSize
-from ui.core.confiq import Colors  # Use your color palette
+from gui.core.confiq import Colors  # Use your color palette
 
 class MenuContainer(QFrame):
     def __init__(self, parent=None, padding=50, background=Colors.SECONDARY):
