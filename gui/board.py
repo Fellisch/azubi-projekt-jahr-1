@@ -23,7 +23,7 @@ class Board(QWidget):
         for row in range(board_size):
             visual_row = board_size - 1 - row if is_dame else row
             for col in range(board_size):
-                cellType = CellType.LIGHT if (row + col) % 2 == 0 else CellType.DARK
+                cellType = CellType.DARK if (row + col) % 2 == 0 else CellType.LIGHT
                 image_path = None
                 if possible_moves and (row, col) in possible_moves:
                     image_path = "test.svg"
