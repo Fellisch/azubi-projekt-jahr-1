@@ -11,6 +11,7 @@ from gui.gameOverDialog import GameOverDialog
 from gui.loginForm import LoginForm
 from gui.signupForm import SignupForm
 from gui.gameSetupForm import GameSetupForm
+from gui.rules import RulesToggle  # Import RulesToggle
 
 GAMEMODE_MAP = {
     "TicTacToe": 1,
@@ -51,6 +52,7 @@ class MainWindow(QMainWindow):
         self.board = None
         self.current_difficulty = 3
         self.current_user_id = None
+        self.rules_toggle = None  # Initialize RulesToggle
 
         self._setup_login_form()
         self._setup_signup_form()
@@ -96,12 +98,28 @@ class MainWindow(QMainWindow):
         )
         self.game_setup_form.playRequested.connect(self._handle_game_start)
 
+    def _setup_rules_toggle(self):
+        if self.rules_toggle:
+            self.windowModule.removeWidget(self.rules_toggle)
+        if self.controller and self.controller.game:
+            self.rules_toggle = RulesToggle(game=self.controller.game, violated_ids=[])
+            self.windowModule.addChildWidget(
+                self.rules_toggle,
+                Constants.BOARD_WIDTH - 125,
+                Constants.BOARD_HEIGHT - 125 - self.windowModule.NAVBAR_HEIGHT,
+                Pivot.CENTER
+            )
+        else:
+            self.rules_toggle = None
+
     def _show_login_view(self):
         self.login_form.show()
         self.signup_form.hide()
         self.game_setup_form.hide()
         if self.board:
             self.board.hide()
+        if self.rules_toggle:
+            self.rules_toggle.hide()
 
     def _show_signup_view(self):
         self.login_form.hide()
@@ -110,6 +128,8 @@ class MainWindow(QMainWindow):
         self.game_setup_form.hide()
         if self.board:
             self.board.hide()
+        if self.rules_toggle:
+            self.rules_toggle.hide()
 
     def _show_game_selection_view(self):
         self.login_form.hide()
@@ -120,6 +140,8 @@ class MainWindow(QMainWindow):
             self.board = None
         if self.controller:
             self.controller = None
+        if self.rules_toggle:
+            self.rules_toggle.hide()
 
     def _show_board_view(self):
         self.login_form.hide()
@@ -127,6 +149,10 @@ class MainWindow(QMainWindow):
         self.game_setup_form.hide()
         if self.board:
             self.board.show()
+        self._setup_rules_toggle()  # Recreate RulesToggle with the current game
+        if self.rules_toggle:
+            self.rules_toggle.show()
+            self._update_violated_rules()
 
     def _handle_guest_access(self):
         print("Guest access requested. Showing game selection.")
@@ -203,8 +229,32 @@ class MainWindow(QMainWindow):
             self.board.show_possible_moves(possible_moves)
         else:
             self.board.update_board(self.controller.get_board())
+        self._update_violated_rules()
         if win_status:
             self.show_game_over(win_status)
+
+    def _update_violated_rules(self):
+        if not self.controller or not self.rules_toggle:
+            return
+        violated_ids = self._get_violated_rule_ids()
+        print(f"Updating violated rules: {violated_ids}")
+        self.rules_toggle.setViolatedRules(violated_ids)
+
+    def _get_violated_rule_ids(self):
+        # Placeholder method to determine violated rules
+        violated_ids = []
+        if self.controller.game_type == "TicTacToe":
+            board = self.controller.get_board()
+            for row in board:
+                for cell in row:
+                    if cell == "invalid":
+                        violated_ids.append(1)
+        elif self.controller.game_type == "Dame":
+            if self.controller.game.current_player == "human":
+                captures_available = False
+                if captures_available:
+                    violated_ids.append(2)
+        return violated_ids
 
     def show_game_over(self, win_status):
         if not self.controller:
