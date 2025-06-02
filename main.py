@@ -13,6 +13,8 @@ from gui.signupForm import SignupForm
 from gui.gameSetupForm import GameSetupForm
 from database.DataQueries import increaseWins, increaseLosses # Add this import
 from gui.rules import RulesToggle  # Import RulesToggle
+from gui.myButton import MyButton  # Import MyButton
+from gui.imageWidget import ImageWidget  # Import ImageWidget
 
 GAMEMODE_MAP = {
     "TicTacToe": 1,
@@ -54,7 +56,10 @@ class MainWindow(QMainWindow):
         self.current_difficulty = 3
         self.current_user_id = None
         self.rules_toggle = None  # Initialize RulesToggle
+        self.image = None  # Initialize ImageWidget for homepage
+        self.play_button = None  # Initialize play button for homepage
 
+        self._setup_homepage()  # Setup homepage first
         self._setup_login_form()
         self._setup_signup_form()
         self._setup_game_selection_ui()
@@ -69,7 +74,28 @@ class MainWindow(QMainWindow):
         self.signup_form.loginLinkActivated.connect(self._show_login_view)
         self.signup_form.guestAccessRequested.connect(self._handle_guest_access)
 
-        self._show_login_view()
+        self.play_button.clicked.connect(self._show_login_view)  # Connect play button to login view
+
+        self._show_homepage()  # Show homepage initially
+
+    def _setup_homepage(self):
+        # Setup ImageWidget with notepad.svg
+        self.image = ImageWidget("notepad.svg", max_size=(300, 300))
+        self.windowModule.addChildWidget(
+            self.image,
+            Constants.BOARD_WIDTH / 2,
+            Constants.BOARD_HEIGHT / 2 - 150,
+            Pivot.CENTER
+        )
+
+        # Setup "LETS PLAY!" button
+        self.play_button = MyButton(text='LETS PLAY!', fontSize=46, padding='52px 70px')
+        self.windowModule.addChildWidget(
+            self.play_button,
+            Constants.BOARD_WIDTH / 2,
+            Constants.BOARD_HEIGHT / 2 + 100,
+            Pivot.CENTER
+        )
 
     def _setup_login_form(self):
         self.login_form = LoginForm()
@@ -113,7 +139,20 @@ class MainWindow(QMainWindow):
         else:
             self.rules_toggle = None
 
+    def _show_homepage(self):
+        self.image.show()
+        self.play_button.show()
+        self.login_form.hide()
+        self.signup_form.hide()
+        self.game_setup_form.hide()
+        if self.board:
+            self.board.hide()
+        if self.rules_toggle:
+            self.rules_toggle.hide()
+
     def _show_login_view(self):
+        self.image.hide()
+        self.play_button.hide()
         self.login_form.show()
         self.signup_form.hide()
         self.game_setup_form.hide()
@@ -123,6 +162,8 @@ class MainWindow(QMainWindow):
             self.rules_toggle.hide()
 
     def _show_signup_view(self):
+        self.image.hide()
+        self.play_button.hide()
         self.login_form.hide()
         self.signup_form.show()
         self.signup_form.clear_error()
@@ -133,6 +174,8 @@ class MainWindow(QMainWindow):
             self.rules_toggle.hide()
 
     def _show_game_selection_view(self):
+        self.image.hide()
+        self.play_button.hide()
         self.login_form.hide()
         self.signup_form.hide()
         self.game_setup_form.show()
@@ -145,6 +188,8 @@ class MainWindow(QMainWindow):
             self.rules_toggle.hide()
 
     def _show_board_view(self):
+        self.image.hide()
+        self.play_button.hide()
         self.login_form.hide()
         self.signup_form.hide()
         self.game_setup_form.hide()
