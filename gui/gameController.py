@@ -37,7 +37,7 @@ class GameController:
 
         if self.game_type == "Dame":
             return self._handle_dame_click(position)
-        else:  # TicTacToe
+        else:
             return self._handle_tictactoe_click(position)
 
     def _handle_dame_click(self, position):
@@ -54,7 +54,6 @@ class GameController:
                 if move[2] == position:
                     valid, further_capture = self.game.make_move(move, self.game.human_player_piece)
                     if valid:
-                        self._update_dame_piece_sets(move)
                         win_status = self.game.check_win_condition()
                         if win_status:
                             self.reset_selection()
@@ -92,21 +91,6 @@ class GameController:
         self.selected_piece = None
         self.possible_moves = []
 
-    def _update_dame_piece_sets(self, move):
-        if self.game_type != "Dame":
-            return
-        move_type, from_pos, to_pos = move[0], move[1], move[2]
-        pieces_set = self.game.human_pieces if self.game.current_player == "human" else self.game.ai_pieces
-        opponent_pieces = self.game.ai_pieces if self.game.current_player == "human" else self.game.human_pieces
-        try:
-            pieces_set.remove(from_pos)
-            pieces_set.add(to_pos)
-            if move_type == "capture":
-                for captured in move[3]:
-                    opponent_pieces.discard(captured)
-        except KeyError:
-            self._resync_dame_piece_sets()
-
     def _resync_dame_piece_sets(self):
         if self.game_type != "Dame":
             return
@@ -129,10 +113,9 @@ class GameController:
                 if self.game_type == "Dame":
                     valid, further_capture = self.game.make_move(ai_move, self.game.ai_player_piece)
                     if valid:
-                        self._update_dame_piece_sets(ai_move)
                         if not further_capture:
                             break
-                else:  # TicTacToe
+                else:
                     valid = self.game.make_move(ai_move, self.game.ai_player_mark)
                     if valid:
                         break
