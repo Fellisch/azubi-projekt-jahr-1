@@ -12,11 +12,20 @@ with a Minimax AI opponent.
 
 (To be added: A list of implemented features)
 
-## Setup and Run
+## Setup and Run (MacOS/Linux)
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+## Setup and Run (Windows)
+
+```bash
+python3 -m venv venv
+.\venv\bin\activate
 pip install -r requirements.txt
 python main.py
 ```
