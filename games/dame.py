@@ -281,7 +281,9 @@ class Dame(BaseGame):
         """
         from ai.minimax import Minimax
         ai = Minimax(self, max_depth=3)
-        return ai.find_best_move(self.ai_player_piece)
+        best_move = ai.find_best_move(self.ai_player_piece)
+        move_was_valid, further_capture_possible_for_same_player = self.make_move(best_move, self.ai_player_piece)
+        return best_move, further_capture_possible_for_same_player
 
     def is_game_over(self):
         return self.check_win_condition() is not None

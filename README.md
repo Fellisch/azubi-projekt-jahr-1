@@ -11,15 +11,12 @@ with a Minimax AI opponent.
 ## Features
 
 (To be added: A list of implemented features)
-GUI:
-
-# PySide6 Setup
 
 ## Setup and Run
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install PySide6
+pip install -r requirements.txt
 python main.py
 ```

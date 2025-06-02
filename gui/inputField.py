@@ -11,12 +11,16 @@ class InputField(QLineEdit):
         padding=28,
         background=Colors.TERTIARY,
         text_color=Colors.FONT_PRIMARY,
-        placeholder_text=""
+        placeholder_text="",
+        is_password=False
     ):
         super().__init__(parent)
 
         self.setFixedSize(QSize(width, height))
         self.setPlaceholderText(placeholder_text)
+
+        if is_password:
+            self.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.setStyleSheet(f"""
             QLineEdit {{
