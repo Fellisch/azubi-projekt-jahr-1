@@ -62,7 +62,7 @@ class Dame(BaseGame):
         opponent_piece = self._get_opponent_piece(player_piece)
 
         # First check for captures (Schlagzwang)
-        captures = self._get_possible_captures(pieces, player_piece, opponent_piece, direction)
+        captures = self._get_possible_captures(pieces, opponent_piece, direction)
         if captures:
             return captures
 
@@ -92,7 +92,7 @@ class Dame(BaseGame):
         # If no captures, check for regular moves
         return self._get_regular_moves_for_piece((row, col), direction)
 
-    def _get_possible_captures(self, pieces, player_piece, opponent_piece, direction):
+    def _get_possible_captures(self, pieces, opponent_piece, direction):
         """Helper method to find all possible captures for all pieces."""
         possible_captures = []
 
@@ -146,52 +146,94 @@ class Dame(BaseGame):
 
         return moves
 
+    def _check_further_captures(self, r_start, c_start, piece_making_move):
+        """
+        Checks if the piece at (r_start, c_start) belonging to piece_making_move
+        has any further *forward* capture moves available.
+        Returns True if further captures are possible, False otherwise.
+        """
+        opponent_piece = self._get_opponent_piece(piece_making_move)
+        # Determine forward direction for the current piece for a non-king piece
+        # Human (W) moves towards increasing row index (+1).
+        # AI (B) moves towards decreasing row index (-1).
+        piece_forward_direction = 1 if piece_making_move == self.human_player_piece else -1
+
+        # dr_one_step is the change in row to reach the opponent's square
+        # dc_one_step is the change in col to reach the opponent's square
+        for dr_one_step in [-1, 1]: 
+            for dc_one_step in [-1, 1]: 
+                # This is the crucial check for "forward" capture for a simple piece
+                if dr_one_step != piece_forward_direction:
+                    continue
+
+                opponent_r, opponent_c = r_start + dr_one_step, c_start + dc_one_step
+                land_r, land_c = r_start + 2*dr_one_step, c_start + 2*dc_one_step
+
+                if self._is_valid_coord(land_r, land_c) and \
+                   self.board[land_r][land_c] == EMPTY and \
+                   self._is_valid_coord(opponent_r, opponent_c) and \
+                   self.board[opponent_r][opponent_c] == opponent_piece:
+                    return True # Found at least one valid forward capture
+        
+        return False # No further forward captures found
+
     def make_move(self, move_info, player_piece_making_move):
         """Applies a move to the board.
         move_info is [type, from_pos, to_pos, list_of_captured_coords_if_capture]
         type is "move" or "capture".
-        Returns True if successful.
+        Returns a tuple: (bool: move_was_valid, bool: further_capture_possible_for_same_player)
         """
         move_type, from_pos, to_pos = move_info[0], move_info[1], move_info[2]
         from_r, from_c = from_pos
         to_r, to_c = to_pos
 
-        if self.board[from_r][from_c] != player_piece_making_move:
-            # print(f"Error: Piece at {from_pos} is not {player_piece_making_move}")
-            return False  # Trying to move opponent's piece or empty square
+        if not self._is_valid_coord(from_r, from_c) or \
+           self.board[from_r][from_c] != player_piece_making_move:
+            # print(f"Error: Piece at {from_pos} is not {player_piece_making_move} or invalid coord.")
+            return False, False # Trying to move opponent's piece, empty square, or invalid from_pos
 
-        # Update board
+        # Assuming get_possible_moves ensures to_pos is valid and empty.
+        # If direct calls to make_move are possible, more validation for to_pos might be needed.
+
         self.board[to_r][to_c] = player_piece_making_move
         self.board[from_r][from_c] = EMPTY
-
-        # Update piece tracking sets
-        if player_piece_making_move == self.human_player_piece:
-            self.human_pieces.remove(from_pos)
-            self.human_pieces.add(to_pos)
-        else:
-            self.ai_pieces.remove(from_pos)
-            self.ai_pieces.add(to_pos)
+        
+        further_capture_possible = False
 
         if move_type == "capture":
+            # Ensure move_info has the captured piece coordinates for a capture type
+            if len(move_info) < 4 or not isinstance(move_info[3], list):
+                # This indicates an issue with how move_info was constructed.
+                # Revert board changes for atomicity or log critical error.
+                self.board[from_r][from_c] = player_piece_making_move # Revert piece move
+                self.board[to_r][to_c] = EMPTY # Revert landing square
+                # print("Error: Capture move_info malformed.")
+                return False, False # Move considered invalid due to bad data
+
             captured_coords_list = move_info[3]
             for cap_r, cap_c in captured_coords_list:
-                # Determine which player's piece was captured
-                captured_piece = self.board[cap_r][cap_c]
-                self.board[cap_r][cap_c] = EMPTY
+                # Assuming get_possible_moves ensures captured_coords are valid and contain opponent pieces.
+                # If not, add validation for cap_r, cap_c and self.board[cap_r][cap_c].
+                self.board[cap_r][cap_c] = EMPTY # Remove captured piece
+            
+            if self._check_further_captures(to_r, to_c, player_piece_making_move):
+                further_capture_possible = True
+                # Player DOES NOT switch if a chain capture is possible/mandatory
+            else:
+                self.switch_player() # Current player's turn ends
+        
+        elif move_type == "move":
+            self.switch_player() # Current player's turn ends
+            # No further captures possible after a simple move due to Schlagzwang
+        
+        else: # Unknown move_type
+            # Revert board changes for atomicity
+            self.board[from_r][from_c] = player_piece_making_move
+            self.board[to_r][to_c] = EMPTY
+            # print(f"Error: Unknown move_type '{move_type}'.")
+            return False, False # Move is invalid
 
-                # Update piece tracking sets for captured piece
-                if captured_piece == self.human_player_piece:
-                    self.human_pieces.remove((cap_r, cap_c))
-                elif captured_piece == self.ai_player_piece:
-                    self.ai_pieces.remove((cap_r, cap_c))
-
-            # After a capture, check if further captures are possible from to_pos by the same piece
-            # This is essential for multi-jumps. The game turn only ends when no more captures for that piece.
-            # For now, this is simplified: one jump per `make_move` call from `get_possible_moves`.
-            # A more complex game loop would handle multi-jumps.
-
-        self.switch_player()  # Player turn switches after a move sequence.
-        return True
+        return True, further_capture_possible
 
     def check_win_condition(self):
         """Checks win conditions:
@@ -239,7 +281,9 @@ class Dame(BaseGame):
         """
         from ai.minimax import Minimax
         ai = Minimax(self, max_depth=3)
-        return ai.find_best_move(self.ai_player_piece)
+        best_move = ai.find_best_move(self.ai_player_piece)
+        move_was_valid, further_capture_possible_for_same_player = self.make_move(best_move, self.ai_player_piece)
+        return best_move, further_capture_possible_for_same_player
 
     def is_game_over(self):
         return self.check_win_condition() is not None

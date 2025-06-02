@@ -1,4 +1,4 @@
-from models import SessionLocal, User, Game
+from .models import SessionLocal, User, Game
 
 def increaseWins(id: int, gamemode: int, difficulty: int):
     session = SessionLocal()

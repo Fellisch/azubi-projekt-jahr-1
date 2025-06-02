@@ -1,364 +1,278 @@
-# import tkinter as tk # GUI Team will handle GUI library
-# from tkinter import simpledialog, messagebox, scrolledtext # GUI Team will handle GUI library
+import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QHBoxLayout, QWidget
+from PySide6.QtGui import QPainter, QPen, QColor
+from PySide6.QtCore import Qt
+from gui.board import Board
+from gui.core.confiq import Colors, Constants
+from gui.window import WindowModule, Pivot
+from gui.signalBus import bus
+from gui.gameController import GameController
+from gui.gameOverDialog import GameOverDialog
+from gui.loginForm import LoginForm
+from gui.signupForm import SignupForm
+import bcrypt
 
-from .games.tic_tac_toe import TicTacToe
-from .games.dame import Dame, HUMAN_PIECE as DAME_HUMAN_PIECE, AI_PIECE as DAME_AI_PIECE
-from .ai.minimax import Minimax
-from .database.database_manager import DatabaseManager
-from .database.user_management import UserManagement
+# Simple mapping for gamemode to integer for the database
+GAMEMODE_MAP = {
+    "TicTacToe": 1,
+    "Dame": 2
+}
 
-# --- Placeholder for GUI Team's Implementation ---
-class GUIManagerPlaceholder:
-    def __init__(self, app_controller):
-        self.app_controller = app_controller # To call back to App for logic
-        print("[GUI Placeholder] GUIManager initialized. Waiting for GUI team to implement.")
-        # self.root = tk.Tk() # GUI team will manage the root window
+class GridWindowModule(WindowModule):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gridSpacing = getattr(Constants, 'GRID_SPACING', 20)
+        self.gridColor = QColor(Colors.SECONDARY)
+        self.gridColor.setAlpha(78)
 
-    def display_main_menu(self, user_status):
-        print(f"[GUI Placeholder] Displaying Main Menu. User Status: {user_status}")
-        # GUI team: Implement main menu with game selection, login, register buttons
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter(self)
+        pen = QPen(self.gridColor)
+        pen.setWidth(1)
+        painter.setPen(pen)
+        width = self.width()
+        height = self.height()
+        x = 0
+        while x < width:
+            painter.drawLine(x, 0, x, height)
+            x += self.gridSpacing
+        y = 0
+        while y < height:
+            painter.drawLine(0, y, width, y)
+            y += self.gridSpacing
 
-    def display_game_view(self, game_name, board_string, current_player_text, difficulty):
-        print(f"[GUI Placeholder] Displaying Game View for {game_name} (Difficulty: {difficulty})")
-        print(f"[GUI Placeholder] Board:\n{board_string}")
-        print(f"[GUI Placeholder] Status: {current_player_text}")
-        # GUI team: Implement game board display, move input fields, status labels, rules, quit buttons
-
-    def get_user_credentials(self, prompt_type): # "Login" or "Register"
-        print(f"[GUI Placeholder] Requesting user credentials for {prompt_type}.")
-        # GUI team: Implement dialogs to get username/password
-        # For placeholder, returning fixed values or None
-        if prompt_type == "Login":
-            # Simulating user input for testing flow
-            # username = input(f"[Placeholder Input] Enter {prompt_type} username: ") 
-            # password = input(f"[Placeholder Input] Enter {prompt_type} password: ")
-            # return username, password
-            return "testuser", "password" # Auto-input for faster testing
-        return None, None # Default for register or if no input simulated
-
-    def get_human_move(self, game_name):
-        print(f"[GUI Placeholder] Requesting human move for {game_name}.")
-        # GUI team: Implement graphical move input (e.g., clicking board) or text field
-        # Simulating user input for testing flow
-        # move_str = input("[Placeholder Input] Enter your move: ")
-        # return move_str
-        if game_name == "TicTacToe": return "0,0" # Auto-input for TTT
-        if game_name == "Dame": return "1,1,2,0" # Auto-input for Dame simple move (example)
-        return "" # Default
-    
-    def get_difficulty_selection(self):
-        print(f"[GUI Placeholder] Requesting AI difficulty selection (1-5).")
-        # GUI team: Implement a scale or input for difficulty
-        # return int(input("[Placeholder Input] Enter AI difficulty (1-5): ") or "3")
-        return 3 # Default difficulty
-
-    def show_message(self, title, message, msg_type="info"): # msg_type: "info", "error", "warning"
-        print(f"[GUI Placeholder] [{msg_type.upper()}] {title}: {message}")
-        # GUI team: Implement message boxes / notifications
-
-    def ask_yes_no(self, title, question):
-        print(f"[GUI Placeholder] ASK YES/NO: {title} - {question}")
-        # GUI team: Implement yes/no dialog
-        # return input(f"[Placeholder Input] {question} (yes/no): ").lower() == 'yes'
-        return True # Default to yes for flows like "play as guest?"
-
-    def update_user_status_display(self, status_text):
-        print(f"[GUI Placeholder] Updating user status display: {status_text}")
-        # GUI team: Update the part of the UI that shows login status
-
-    def switch_to_main_menu_view(self):
-        print(f"[GUI Placeholder] Switching view to Main Menu.")
-        # GUI team: Code to hide game view and show main menu
-
-    def switch_to_game_view(self, game_name, difficulty):
-        print(f"[GUI Placeholder] Switching view to Game for {game_name} (Difficulty: {difficulty})")
-        # GUI team: Code to hide main menu and show game view
-
-    def run_main_loop(self):
-        print("[GUI Placeholder] Starting GUI main loop (placeholder). GUI team will implement real loop.")
-        # GUI team: This will be their tk.mainloop() or equivalent
-        # For this placeholder, we might simulate a simple command-line interaction loop
-        # or just allow the AppController to drive a few state changes.
-        self.app_controller.start_application() # Trigger initial state
-
-    def close_gui(self):
-        print("[GUI Placeholder] Closing GUI.")
-
-# --- Application Controller (Manages game logic, AI, and interacts with GUI Manager) ---
-class App:
+class MainWindow(QMainWindow):
     def __init__(self):
-        self.db_manager = DatabaseManager()
-        self.user_manager = UserManagement(self.db_manager)
-        self.gui_manager = GUIManagerPlaceholder(self) # GUI Team provides their implementation
+        super().__init__()
+        self.setWindowTitle("Stress Game Prototype")
+        self.setFixedSize(Constants.BOARD_WIDTH, Constants.BOARD_HEIGHT)
+        self.setStyleSheet(f"background-color: {Colors.TERTIARY};")
         
-        self.current_game_instance = None
-        self.ai_opponent = None
-        self.game_name = None
+        self.windowModule = GridWindowModule()
+        self.setCentralWidget(self.windowModule)
+
+        self.controller = None
+        self.board = None
         self.current_difficulty = 3
-        print("[App Controller] Initialized.")
+        self.current_user_id = None # To store logged-in user's ID
 
-    def start_application(self):
-        print("[App Controller] Application started. Displaying main menu.")
-        self.update_user_status_for_gui()
-        self.gui_manager.display_main_menu(self.user_manager.get_current_user() or "Not Logged In")
-        # In a real scenario, GUI would now wait for user actions (handled by GUI team)
-        # For placeholder, we can simulate some actions if needed for testing, or assume GUI calls back
+        self._setup_login_form()
+        self._setup_signup_form()
+        self._setup_game_selection_ui()
 
-    def update_user_status_for_gui(self):
-        user = self.user_manager.get_current_user()
-        status = f"Logged in as: {user}" if user and user != "Guest" else "Playing as Guest / Not Logged In"
-        self.gui_manager.update_user_status_display(status)
-
-    # --- Callbacks from GUI Placeholder (simulated) ---
-    def handle_login_request(self):
-        username, password = self.gui_manager.get_user_credentials("Login")
-        if username and password:
-            if self.user_manager.login_user(username, password):
-                self.gui_manager.show_message("Login Successful", f"Welcome back, {username}!")
-            else:
-                self.gui_manager.show_message("Login Failed", "Invalid username or password.", "error")
-        self.update_user_status_for_gui()
-        # GUI would typically refresh part of the menu or re-display it
-        self.gui_manager.display_main_menu(self.user_manager.get_current_user() or "Not Logged In") 
-
-    def handle_register_request(self):
-        username, password = self.gui_manager.get_user_credentials("Register")
-        # For placeholder, let's simulate a successful registration for flow
-        if not username: username = "newuser"
-        if not password: password = "newpass"
+        bus.cellClicked.connect(self.handle_cell_click)
         
-        if username and password:
-            if self.user_manager.register_user(username, password):
-                self.gui_manager.show_message("Registration Successful", f"User {username} registered. You can now log in.")
-            else:
-                self.gui_manager.show_message("Registration Failed", "Username might already exist.", "error")
-        self.update_user_status_for_gui()
-        self.gui_manager.display_main_menu(self.user_manager.get_current_user() or "Not Logged In")
+        # Connect LoginForm signals
+        self.login_form.loginAttempt.connect(self._handle_user_login_attempt) # Changed from loginSuccessful
+        self.login_form.guestAccessRequested.connect(self._handle_guest_access) # New handler for clarity
+        self.login_form.signupRequested.connect(self._show_signup_view)
 
-    def handle_guest_play_request(self):
-        self.user_manager.logout_user() # Clear any existing login
-        self.user_manager.current_user = "Guest"
-        self.gui_manager.show_message("Guest Mode", "Playing as Guest. Scores will not be saved.")
-        self.update_user_status_for_gui()
-        self.gui_manager.display_main_menu(self.user_manager.get_current_user() or "Not Logged In")
+        # Connect SignupForm signals
+        self.signup_form.signupAttempted.connect(self._handle_user_signup_attempt)
+        self.signup_form.loginLinkActivated.connect(self._show_login_view)
+        self.signup_form.guestAccessRequested.connect(self._handle_guest_access)
 
-    def handle_logout_request(self):
-        self.user_manager.logout_user()
-        self.gui_manager.show_message("Logout", "You have been logged out.")
-        self.update_user_status_for_gui()
-        self.gui_manager.display_main_menu(self.user_manager.get_current_user() or "Not Logged In")
+        #homescreen setup and show
 
-    def handle_game_selection(self, game_choice):
-        if self.user_manager.get_current_user() is None:
-            if self.gui_manager.ask_yes_no("Login Required", "Play as Guest?"):
-                self.handle_guest_play_request() # This will also update GUI status
-            else:
-                return # Stay on main menu
-        
-        self.game_name = game_choice
-        self.current_difficulty = self.gui_manager.get_difficulty_selection()
-        
-        if game_choice == "TicTacToe":
-            self.current_game_instance = TicTacToe()
-        elif game_choice == "Dame":
-            self.current_game_instance = Dame()
+        self._show_login_view()
+
+    def _setup_login_form(self):
+        self.login_form = LoginForm()
+        content_frame_height = Constants.BOARD_HEIGHT - self.windowModule.NAVBAR_HEIGHT
+        content_frame_width = Constants.BOARD_WIDTH
+        center_x = content_frame_width / 2
+        center_y = content_frame_height / 2
+        self.windowModule.addChildWidget(self.login_form, center_x, center_y, Pivot.CENTER)
+
+    def _setup_signup_form(self):
+        self.signup_form = SignupForm()
+        content_frame_height = Constants.BOARD_HEIGHT - self.windowModule.NAVBAR_HEIGHT
+        content_frame_width = Constants.BOARD_WIDTH
+        center_x = content_frame_width / 2
+        center_y = content_frame_height / 2
+        self.windowModule.addChildWidget(self.signup_form, center_x, center_y, Pivot.CENTER)
+
+    def _setup_game_selection_ui(self):
+        self.game_container = QWidget()
+        game_layout = QHBoxLayout(self.game_container)
+        game_layout.setSpacing(10)
+        game_layout.setContentsMargins(10, 10, 10, 10)
+        dame_button = QPushButton("Dame")
+        tictactoe_button = QPushButton("TicTacToe")
+        dame_button.setStyleSheet(f"background-color: {Colors.PRIMARY}; color: {Colors.FONT_PRIMARY};")
+        tictactoe_button.setStyleSheet(f"background-color: {Colors.PRIMARY}; color: {Colors.FONT_PRIMARY};")
+        dame_button.clicked.connect(lambda: (print("Dame button clicked"), self.set_game("Dame")))
+        tictactoe_button.clicked.connect(lambda: (print("TicTacToe button clicked"), self.set_game("TicTacToe")))
+        game_layout.addWidget(dame_button)
+        game_layout.addWidget(tictactoe_button)
+        game_container_y_in_content = 120 - self.windowModule.NAVBAR_HEIGHT 
+        self.windowModule.addChildWidget(self.game_container, Constants.BOARD_WIDTH / 2, game_container_y_in_content, Pivot.CENTER)
+
+        self.difficulty_container = QWidget()
+        difficulty_layout = QHBoxLayout(self.difficulty_container)
+        difficulty_layout.setSpacing(10)
+        difficulty_layout.setContentsMargins(10, 10, 10, 10)
+        easy_button = QPushButton("Easy")
+        medium_button = QPushButton("Medium")
+        hard_button = QPushButton("Hard")
+        easy_button.setStyleSheet(f"background-color: {Colors.PRIMARY}; color: {Colors.FONT_PRIMARY};")
+        medium_button.setStyleSheet(f"background-color: {Colors.PRIMARY}; color: {Colors.FONT_PRIMARY};")
+        hard_button.setStyleSheet(f"background-color: {Colors.PRIMARY}; color: {Colors.FONT_PRIMARY};")
+        easy_button.clicked.connect(lambda: self.set_difficulty(1))
+        medium_button.clicked.connect(lambda: self.set_difficulty(3))
+        hard_button.clicked.connect(lambda: self.set_difficulty(5))
+        difficulty_layout.addWidget(easy_button)
+        difficulty_layout.addWidget(medium_button)
+        difficulty_layout.addWidget(hard_button)
+        difficulty_container_y_in_content = (Constants.BOARD_HEIGHT - 130) - self.windowModule.NAVBAR_HEIGHT
+        self.windowModule.addChildWidget(self.difficulty_container, Constants.BOARD_WIDTH / 2, difficulty_container_y_in_content, Pivot.CENTER)
+
+    def _show_login_view(self):
+        self.login_form.show()
+        self.signup_form.hide()
+        self.game_container.hide()
+        self.difficulty_container.hide()
+        if self.board: self.board.hide()
+
+    def _show_signup_view(self):
+        self.login_form.hide()
+        self.signup_form.show()
+        self.signup_form.clear_error()
+        self.game_container.hide()
+        self.difficulty_container.hide()
+        if self.board: self.board.hide()
+
+    def _show_game_selection_view(self):
+        self.login_form.hide()
+        self.signup_form.hide()
+        self.game_container.show()
+        self.difficulty_container.show()
+        if self.board: 
+            self.windowModule.removeWidget(self.board)
+            self.board = None
+        if self.controller:
+            self.controller = None
+
+    def _show_board_view(self):
+        self.login_form.hide()
+        self.signup_form.hide()
+        self.game_container.hide()
+        self.difficulty_container.hide()
+        if self.board: self.board.show()
+
+    def _handle_guest_access(self):
+        print("Guest access requested. Showing game selection.")
+        self.current_user_id = None # Explicitly set no user for guest
+        self._show_game_selection_view()
+
+    def _handle_user_login_attempt(self, username, password):
+        print(f"Attempting to log in user: {username}")
+        from database.auth import login_user # Use the existing login_user
+
+        auth_result = login_user(username, password)
+
+        if auth_result.code is None: # Success is code None, id will be user_id
+            self.current_user_id = auth_result.id
+            print(f"User '{username}' (ID: {self.current_user_id}) logged in successfully. Showing game selection.")
+            self.login_form.clear_error() # Clear any previous login errors
+            self._show_game_selection_view()
         else:
-            self.gui_manager.show_message("Error", f"Unknown game: {game_choice}", "error")
-            return
-
-        self.ai_opponent = Minimax(self.current_game_instance, max_depth=self.current_difficulty)
-        self.current_game_instance.current_player = "human" # Ensure human starts (LF4040)
+            self.current_user_id = None
+            error_message = "Login failed."
+            if auth_result.code == 102:
+                error_message = "User not found."
+            elif auth_result.code == 103:
+                error_message = "Incorrect password."
+            print(f"Login failed for {username}: {error_message} (Code: {auth_result.code})")
+            self.login_form.display_error(error_message)
+    
+    def _handle_user_signup_attempt(self, username, password):
+        print(f"Attempting to sign up user: {username} using register_user.")
+        # No need to hash password here, register_user does it.
         
-        self.gui_manager.switch_to_game_view(self.game_name, self.current_difficulty)
-        self.update_gui_game_state("Your turn (Human).")
+        from database.auth import register_user # Use the existing register_user
 
-    def update_gui_game_state(self, status_message):
-        if self.current_game_instance:
-            board_str = str(self.current_game_instance)
-            self.gui_manager.display_game_view(self.game_name, board_str, status_message, self.current_difficulty)
+        auth_result = register_user(username, password) # Pass plain password
 
-    def handle_human_move_submission(self):
-        if not self.current_game_instance or self.current_game_instance.current_player != "human":
-            self.gui_manager.show_message("Game Error", "Not your turn or game not started.", "warning")
-            return
-
-        move_str = self.gui_manager.get_human_move(self.game_name)
-        valid_move_made = False
-        human_player_mark = self.current_game_instance.human_player_mark if self.game_name == "TicTacToe" else DAME_HUMAN_PIECE
-
-        try:
-            if self.game_name == "TicTacToe":
-                parts = move_str.split(',')
-                if len(parts) == 2:
-                    row, col = int(parts[0]), int(parts[1])
-                    if self.current_game_instance.make_move((row, col), human_player_mark):
-                        valid_move_made = True
-            elif self.game_name == "Dame":
-                # Dame move parsing logic is complex. For placeholder, assume get_human_move from GUI
-                # returns a pre-validated move structure or a simple string that can be looked up.
-                # The current get_human_move placeholder returns a simple string.
-                # We'll try to find this specific move in possible_moves for simplicity.
-                possible_moves = self.current_game_instance.get_possible_moves(human_player_mark)
-                selected_move = None
-                parts = [p.strip() for p in move_str.split(',')]
-                
-                if len(parts) == 4: # Simple move: fr,fc,tr,tc
-                    fr,fc,tr,tc = map(int, parts)
-                    for p_move in possible_moves:
-                        if p_move[0] == 'move' and p_move[1] == (fr,fc) and p_move[2] == (tr,tc):
-                            selected_move = p_move
-                            break
-                elif len(parts) == 6: # Simple capture: fr,fc,tr,tc,cr,cc
-                    fr,fc,tr,tc,cr,cc = map(int, parts)
-                    for p_move in possible_moves:
-                         if p_move[0] == 'capture' and p_move[1] == (fr,fc) and p_move[2] == (tr,tc) and \
-                            len(p_move[3]) == 1 and p_move[3][0] == (cr,cc):
-                            selected_move = p_move
-                            break
-                
-                if selected_move:
-                    if self.current_game_instance.make_move(selected_move, human_player_mark):
-                        valid_move_made = True
+        if auth_result.code is None: # Success is indicated by code being None
+            print(f"User '{username}' (ID: {auth_result.id}) created successfully via register_user. Navigating to login.")
+            # Optionally, pass a success message to login form to display
+            # self.login_form.display_message("Signup successful! Please log in.")
+            self._show_login_view()
+        else:
+            # Map error codes to messages if desired, or use a generic one
+            error_message = "Signup failed."
+            if auth_result.code == 101:
+                error_message = "Username already exists."
+            # Add more specific messages for other codes if register_user has them
             
-            if not valid_move_made:
-                 self.gui_manager.show_message("Invalid Move", f"The move '{move_str}' is not valid. Please try again.", "warning")
+            print(f"Signup failed for {username} via register_user: {error_message} (Code: {auth_result.code})")
+            self.signup_form.display_error(error_message)
 
-        except Exception as e:
-            self.gui_manager.show_message("Move Error", f"Error processing move '{move_str}': {e}", "error")
+    def _handle_signup_request(self):
+        print("Signup link on login form clicked. Showing signup view.")
+        self.login_form.clear_error() # Clear login errors when switching to signup
+        self._show_signup_view()
+
+    def set_difficulty(self, difficulty):
+        self.current_difficulty = difficulty
+        if self.controller:
+            self.controller.set_difficulty(difficulty)
+        print(f"Difficulty set to: {self.current_difficulty}")
+
+    def set_game(self, game_type):
+        print(f"set_game called with type: {game_type}")
+        if self.board:
+            self.windowModule.removeWidget(self.board)
+            self.board = None
+
+        self.controller = GameController(game_type=game_type, difficulty=self.current_difficulty)
+        self.board = Board(self.controller.get_board(), is_dame=(game_type == "Dame"))
+        
+        board_center_x = Constants.BOARD_WIDTH / 2
+        content_frame_height = Constants.BOARD_HEIGHT - self.windowModule.NAVBAR_HEIGHT
+        board_y_target_in_content_frame = (Constants.BOARD_HEIGHT / 2 + 40) - self.windowModule.NAVBAR_HEIGHT
+
+        self.windowModule.addChildWidget(self.board, board_center_x, board_y_target_in_content_frame, Pivot.CENTER)
+        self._show_board_view()
+
+    def handle_cell_click(self, position):
+        if not self.controller or not self.board:
             return
-
-        if valid_move_made:
-            winner = self.current_game_instance.check_win_condition()
-            if winner:
-                self.handle_game_end_logic(winner)
-            else:
-                self.update_gui_game_state("AI is thinking...")
-                self.trigger_ai_turn() # AI's turn
+        possible_moves, win_status = self.controller.handle_cell_click(position)
+        if possible_moves:
+            self.board.show_possible_moves(possible_moves)
         else:
-            self.update_gui_game_state("Invalid move. Your turn (Human).") # Stay on human's turn
+            self.board.update_board(self.controller.get_board())
+        if win_status:
+            self.show_game_over(win_status)
 
-    def trigger_ai_turn(self):
-        if not self.current_game_instance or self.current_game_instance.current_player != "ai":
-            return
-
-        self.ai_opponent.max_depth = self.current_difficulty # Ensure AI difficulty is up-to-date
-        ai_piece = self.current_game_instance.ai_player_mark if self.game_name == "TicTacToe" else DAME_AI_PIECE
+    def show_game_over(self, win_status):
+        if not self.controller: return
+        msg = "Human wins!" if win_status == "human_wins" else "AI wins!" if win_status == "ai_wins" else "It's a Draw!"
         
-        print(f"[App Controller] AI ({ai_piece}) is thinking for {self.game_name} (depth: {self.ai_opponent.max_depth})...")
-        # Corrected call to find_best_move, it now only takes the AI's piece.
-        # The Minimax instance already knows the game_logic_instance and its own max_depth.
-        best_move = self.ai_opponent.find_best_move(ai_piece)
-        print(f"[App Controller] AI chose move: {best_move}")
+        # Pass current_user_id to GameOverDialog if it needs to record score for a specific user
+        # For now, GameOverDialog only uses gamemode and difficulty for fetching general scoreboard.
+        # If we enhance DataQueries.increaseWins/Losses to take user_id, this is where it'd be passed.
+        # print(f"Game over for user_id: {self.current_user_id}") 
 
-        if best_move:
-            if self.game_name == "TicTacToe":
-                self.current_game_instance.make_move(best_move, self.current_game_instance.ai_player_mark)
-            elif self.game_name == "Dame":
-                self.current_game_instance.make_move(best_move, ai_piece)
-            
-            winner = self.current_game_instance.check_win_condition()
-            if winner:
-                self.handle_game_end_logic(winner)
-            else:
-                self.update_gui_game_state("Your turn (Human).")
-        else:
-            # AI has no moves. This should lead to a win condition for human.
-            print("[App Controller] AI has no moves. Checking game state.")
-            winner = self.current_game_instance.check_win_condition()
-            if winner: # Should be human_wins or draw
-                self.handle_game_end_logic(winner)
-            else:
-                # This state should ideally not be reached if win logic is correct
-                self.gui_manager.show_message("Game Error", "AI has no moves, but game not over?", "error")
-                self.update_gui_game_state("Error: AI has no moves. Your turn (Human).")
+        gamemode_int = GAMEMODE_MAP.get(self.controller.game_type, 0)
+        difficulty_int = self.controller.difficulty
+        dialog = GameOverDialog(msg, gamemode_int, difficulty_int, self)
+        dialog.restartClicked.connect(self.handle_restart_game)
+        dialog.mainMenuClicked.connect(self._show_game_selection_view)
+        dialog.exec()
 
-    def handle_game_end_logic(self, winner_status):
-        current_user = self.user_manager.get_current_user()
-        is_truly_guest = self.user_manager.is_guest() # Checks for None or "Guest"
+    def handle_restart_game(self):
+        if self.controller:
+            self.controller.reset_game()
+            self.board.update_board(self.controller.get_board())
+            self.board.show_possible_moves([])
+            self._show_board_view()
 
-        message = ""
-        if winner_status == "human_wins":
-            message = "Congratulations! You won!"
-            if not is_truly_guest and current_user:
-                self.db_manager.update_score(current_user, self.game_name, self.current_difficulty, True)
-        elif winner_status == "ai_wins":
-            message = "AI wins! Better luck next time."
-            if not is_truly_guest and current_user:
-                self.db_manager.update_score(current_user, self.game_name, self.current_difficulty, False)
-        elif winner_status == "draw":
-            message = "It's a draw!"
-        
-        self.update_gui_game_state(message) # Update board one last time with final message
-        self.gui_manager.show_message("Game Over", message)
-        # GUI team would disable move input here.
-
-    def handle_rules_request(self):
-        if self.current_game_instance:
-            rules = self.current_game_instance.get_rules()
-            self.gui_manager.show_message(f"{self.game_name} Rules", rules)
-        else:
-            self.gui_manager.show_message("No Game", "No game selected to show rules for.", "warning")
-
-    def handle_quit_game_request(self):
-        # Optional: show high scores (LF4100). DB team would provide data.
-        # high_scores = self.db_manager.get_high_scores(self.game_name, self.current_difficulty)
-        # self.gui_manager.show_high_scores_view(high_scores) 
-        
-        self.current_game_instance = None
-        self.ai_opponent = None
-        self.game_name = None
-        self.gui_manager.switch_to_main_menu_view()
-        self.update_user_status_for_gui()
-        self.gui_manager.display_main_menu(self.user_manager.get_current_user() or "Not Logged In")
-
-    def handle_app_exit_request(self):
-        if self.gui_manager.ask_yes_no("Quit", "Do you want to quit SpieleSammlung?"):
-            print("[App Controller] Application closing.")
-            self.db_manager.close() # DB team ensures this properly closes connections
-            self.gui_manager.close_gui() # GUI team ensures this closes their window
-            return True # Allow exit
-        return False # Veto exit
-
-# --- Main execution (conceptual) ---
 if __name__ == "__main__":
-    app_controller = App()
-    # The GUI Manager would start its own main loop (e.g., Tkinter's mainloop())
-    # and call methods on app_controller based on user interactions.
-    app_controller.gui_manager.run_main_loop() 
-
-    # For non-GUI testing of the flow, we can simulate some calls:
-    print("\n--- SIMULATING APP FLOW (NO ACTUAL GUI) ---")
-    # app_controller.start_application() # Already called by run_main_loop placeholder
-    
-    # Simulate user trying to log in
-    print("\nSimulating Login...")
-    app_controller.handle_login_request()
-    
-    # Simulate selecting TicTacToe
-    print("\nSimulating Game Selection: TicTacToe...")
-    app_controller.handle_game_selection("TicTacToe")
-    
-    # Simulate a few moves if a game is running (TicTacToe)
-    if app_controller.current_game_instance and app_controller.game_name == "TicTacToe":
-        print("\nSimulating Human Move for TTT (0,0)...")
-        # GUIManager.get_human_move is hardcoded to return "0,0" for TTT for this simulation
-        app_controller.handle_human_move_submission()
-        
-        # If AI didn't win, simulate another human move (e.g., "0,1")
-        if app_controller.current_game_instance and app_controller.current_game_instance.current_player == "human":
-             # Need to make GUIManager.get_human_move return something different or make it interactive
-             # For now, the AI will play its turn, then it will be human again, but get_human_move will return 0,0 again.
-             # This part of simulation needs refinement if we want to test longer game plays without real GUI.
-             print("\nSimulating another Human Move for TTT (0,1) - (Note: placeholder input might be fixed)...")
-             # To make this work better, GUIManagerPlaceholder.get_human_move should be more flexible for simulation
-             # For now, it will likely try to play 0,0 again if not handled.
-    
-    # Simulate quitting game
-    print("\nSimulating Quit Game...")
-    app_controller.handle_quit_game_request()
-    
-    # Simulate app exit
-    print("\nSimulating App Exit...")
-    app_controller.handle_app_exit_request() # Will print placeholder close messages
-
-    print("\n--- SIMULATION END ---") 
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec())
