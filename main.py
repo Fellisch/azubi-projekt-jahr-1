@@ -11,6 +11,7 @@ from gui.gameOverDialog import GameOverDialog
 from gui.loginForm import LoginForm
 from gui.signupForm import SignupForm
 import bcrypt
+from database.DataQueries import increaseWins, increaseLosses # Add this import
 
 # Simple mapping for gamemode to integer for the database
 GAMEMODE_MAP = {
@@ -250,15 +251,23 @@ class MainWindow(QMainWindow):
 
     def show_game_over(self, win_status):
         if not self.controller: return
-        msg = "Human wins!" if win_status == "human_wins" else "AI wins!" if win_status == "ai_wins" else "It's a Draw!"
+        msg = "You win!" if win_status == "human_wins" else "AI wins!" if win_status == "ai_wins" else "It's a Draw!"
         
-        # Pass current_user_id to GameOverDialog if it needs to record score for a specific user
-        # For now, GameOverDialog only uses gamemode and difficulty for fetching general scoreboard.
-        # If we enhance DataQueries.increaseWins/Losses to take user_id, this is where it'd be passed.
-        # print(f"Game over for user_id: {self.current_user_id}") 
+        gamemode_int = GAMEMODE_MAP.get(self.controller.game_type, 0) # tic_tac_toe -> 1, dame -> 2
+        difficulty_int = self.controller.difficulty # 1, 3, 5
 
-        gamemode_int = GAMEMODE_MAP.get(self.controller.game_type, 0)
-        difficulty_int = self.controller.difficulty
+        # Record win/loss if a user is logged in
+        if self.current_user_id is not None:
+            if win_status == "human_wins":
+                increaseWins(id=self.current_user_id, gamemode=gamemode_int, difficulty=difficulty_int)
+                print(f"Recorded win for user {self.current_user_id} in {self.controller.game_type} (diff: {difficulty_int})")
+            elif win_status == "ai_wins":
+                increaseLosses(id=self.current_user_id, gamemode=gamemode_int, difficulty=difficulty_int)
+                print(f"Recorded loss for user {self.current_user_id} in {self.controller.game_type} (diff: {difficulty_int})")
+            # Draws are not currently recorded in win/loss stats
+        else:
+            print("Guest player. Score not recorded.")
+
         dialog = GameOverDialog(msg, gamemode_int, difficulty_int, self)
         dialog.restartClicked.connect(self.handle_restart_game)
         dialog.mainMenuClicked.connect(self._show_game_selection_view)

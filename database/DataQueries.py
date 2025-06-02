@@ -5,13 +5,24 @@ def increaseWins(id: int, gamemode: int, difficulty: int):
     game = session.query(Game).filter(Game.userId==id,Game.gamemode==gamemode,Game.difficulty==difficulty).first()
     if game:
         game.wins += 1
-        session.commit()
+    else:
+        # Create a new game record if it doesn't exist
+        new_game = Game(userId=id, gamemode=gamemode, difficulty=difficulty, wins=1, losses=0)
+        session.add(new_game)
+    session.commit()
+    session.close() # Close the session
 
 def increaseLosses(id: int, gamemode: int, difficulty: int):
     session = SessionLocal()
     game = session.query(Game).filter(Game.userId==id,Game.gamemode==gamemode,Game.difficulty==difficulty).first()
-    game.losses += 1
+    if game:
+        game.losses += 1
+    else:
+        # Create a new game record if it doesn't exist
+        new_game = Game(userId=id, gamemode=gamemode, difficulty=difficulty, wins=0, losses=1)
+        session.add(new_game)
     session.commit()
+    session.close() # Close the session
 
 def getPlayersWithMostWins(gamemode: int, difficulty: int) -> list:
     session = SessionLocal()
