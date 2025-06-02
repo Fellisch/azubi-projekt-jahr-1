@@ -32,18 +32,33 @@ class TicTacToe(BaseGame):
                     moves.append((r, c))
         return moves
 
-    def _check_line(self, mark, count, cells):
+    @staticmethod
+    def _check_line(mark, count, cells):
         """Helper to check if a line (row, col, or diagonal) has 'count' marks."""
         for i in range(len(cells) - count + 1):
             if all(cells[j] == mark for j in range(i, i + count)):
                 return True
         return False
 
+
+    """
+    Überprüft, ob das Spiel gewonnen wurde, ein Unentschieden vorliegt oder das Spiel noch läuft.
+
+    Rückgabewerte:
+        - "human_wins": Der menschliche Spieler hat gewonnen (4 in einer Reihe, Spalte oder Diagonale).
+        - "ai_wins": Die KI hat gewonnen (4 in einer Reihe, Spalte oder Diagonale).
+        - "draw": Das Spielfeld ist voll und niemand hat gewonnen.
+        - None: Das Spiel läuft noch.
+
+    Die Methode prüft:
+        1. Alle Zeilen auf 4 gleiche Markierungen.
+        2. Alle Spalten auf 4 gleiche Markierungen.
+        3. Alle möglichen Diagonalen (beide Richtungen) auf 4 gleiche Markierungen.
+        4. Ob das Spielfeld voll ist (Unentschieden).
+    """
     def check_win_condition(self):
-        """Checks for 4 in a row, column, or diagonal. Also checks for a draw.
-        Returns 'human_wins', 'ai_wins', 'draw', or None.
-        """
-        # Check rows and columns for 4 in a line
+
+        # Check in Zeile
         for i in range(self.board_size):
             # Check row i
             row_cells = self.board[i]
@@ -52,7 +67,7 @@ class TicTacToe(BaseGame):
             if self._check_line(self.ai_player_mark, 4, row_cells):
                 return "ai_wins"
             
-            # Check column i
+            # Check Spalte i
             col_cells = [self.board[r][i] for r in range(self.board_size)]
             if self._check_line(self.human_player_mark, 4, col_cells):
                 return "human_wins"
@@ -126,10 +141,19 @@ class TicTacToe(BaseGame):
         combined_coords = (int(x), int(y))
         game.make_move(combined_coords, self.human_player_mark)
 
-# Example Usage (for testing)
+
+
+    #main game loop
+    def game_loop(self):
+        game = TicTacToe()
+        difficulty = 1 #@frontend wird ersetzt durch die Schwierigkeitseinstellung # empfohlen 1 für easy, 2 für medium, 5 für hard
+        minimax_ai = Minimax(game, max_depth=difficulty)
+
+
+# Funktion für Backend-Tests @frontend bitte im final nicht verwenden
 if __name__ == '__main__':
     game = TicTacToe()
-    difficulty = input("Max Depth: ") #@frontend wird ersetzt durch die Schwierigkeitseinstellung # empfohlen 1 für easy, 2 für medium, 5 für hard
+    difficulty = input("Max Depth: ")
     minimax_ai = Minimax(game, max_depth=int(difficulty))
     print(game.get_rules())
     print("Initial board:")
@@ -143,6 +167,8 @@ if __name__ == '__main__':
         if best_move is not None:
             game.make_move(best_move, game.ai_player_mark)
         print(game)
+        print("Eval Player: ", game.evaluate_board(game.human_player_mark))
+        print("Eval AI: ", game.evaluate_board(game.ai_player_mark))
 
 
 
