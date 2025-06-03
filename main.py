@@ -137,7 +137,7 @@ class MainWindow(QMainWindow):
             self.windowModule.addChildWidget(
                 self.rules_toggle,
                 Constants.BOARD_WIDTH - 125,
-                Constants.BOARD_HEIGHT - 125 - self.windowModule.NAVBAR_HEIGHT,
+                Constants.BOARD_HEIGHT - 157.5 - self.windowModule.NAVBAR_HEIGHT,
                 Pivot.CENTER
             )
         else:
@@ -349,17 +349,18 @@ class MainWindow(QMainWindow):
     def _get_violated_rule_ids(self):
         # Placeholder method to determine violated rules
         violated_ids = []
+        if not self.controller or not self.controller.game:
+            return violated_ids
+
         if self.controller.game_type == "TicTacToe":
-            board = self.controller.get_board()
-            for row in board:
-                for cell in row:
-                    if cell == "invalid":
-                        violated_ids.append(1)
+            pass
+
         elif self.controller.game_type == "Dame":
             if self.controller.game.current_player == "human":
-                captures_available = False
-                if captures_available:
-                    violated_ids.append(2)
+                all_moves = self.controller.game.get_all_possible_moves(self.controller.game.human_player_piece)
+                has_captures = any(move[0] == "capture" for move in all_moves if isinstance(move, list) and len(move) > 0)
+                if has_captures:
+                    violated_ids.append(1) # Add rule ID for "Schlagen (Pflicht)"
         return violated_ids
 
     def show_game_over(self, win_status):

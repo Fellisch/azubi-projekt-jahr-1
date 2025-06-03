@@ -5,12 +5,25 @@ from PySide6.QtCore import Qt, QSize
 from gui.core.confiq import Constants, Colors, CellType
 from gui.signalBus import bus
 
+PLAYER_PIECE_FILES = ['xMark.svg', 'oMark.svg', 'whitePiece.svg', 'blackPiece.svg']
+
 class BoardCell(QFrame):
     def __init__(self, image=None, cellType=CellType.LIGHT, position=None):
         super().__init__()
         self.position = position
         self.setFixedSize(QSize(Constants.CELL_SIZE, Constants.CELL_SIZE))
         self.setCursor(Qt.PointingHandCursor)
+
+        # Calculate new dimensions for 1.5x scaling
+        current_image_area_dimension = Constants.CELL_SIZE - 2 * Constants.PADDING
+        self.target_image_dimension = int(current_image_area_dimension * 1.4)
+        # Ensure target_image_dimension doesn't exceed CELL_SIZE
+        if self.target_image_dimension > Constants.CELL_SIZE:
+            self.target_image_dimension = Constants.CELL_SIZE
+        
+        new_layout_padding = (Constants.CELL_SIZE - self.target_image_dimension) // 2
+        if new_layout_padding < 0: # Should not happen if target_image_dimension is capped
+            new_layout_padding = 0
 
         backgroundColor = Colors.PRIMARY if cellType == CellType.LIGHT else Colors.SECONDARY
         self.setStyleSheet(f"""
@@ -31,7 +44,7 @@ class BoardCell(QFrame):
         self.setGraphicsEffect(shadow)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(Constants.PADDING, Constants.PADDING, Constants.PADDING, Constants.PADDING)
+        layout.setContentsMargins(new_layout_padding, new_layout_padding + 5, new_layout_padding, new_layout_padding)
         layout.setAlignment(Qt.AlignCenter)
 
         self.imageLabel = QLabel(self)
@@ -60,15 +73,28 @@ class BoardCell(QFrame):
         imagePath = self._find_image_path(assets_dir, image)
         if not imagePath:
             self.imageLabel.clear()
+            print(f"Warning: Image file {image} not found in {assets_dir} or subdirectories.")
             return
 
         pixmap = QPixmap(imagePath)
         if pixmap.isNull():
             self.imageLabel.clear()
+            print(f"Warning: Could not load pixmap for {imagePath}.")
             return
 
-        scaledSize = Constants.CELL_SIZE - 2 * Constants.PADDING
-        scaledPixmap = pixmap.scaled(scaledSize, scaledSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        image_filename = os.path.basename(imagePath)
+
+        if image_filename in PLAYER_PIECE_FILES:
+            # Player pieces are scaled to the target dimension
+            scaledPixmap = pixmap.scaled(self.target_image_dimension, self.target_image_dimension, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        else:
+            # Other images (like indicators) respect their intrinsic size, capped by target_image_dimension
+            if pixmap.width() <= self.target_image_dimension and pixmap.height() <= self.target_image_dimension:
+                scaledPixmap = pixmap  # Use original size if it fits
+            else:
+                # Scale down if too large, maintaining aspect ratio
+                scaledPixmap = pixmap.scaled(self.target_image_dimension, self.target_image_dimension, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
         self.imageLabel.setPixmap(scaledPixmap)
         self.imageLabel.setFixedSize(scaledPixmap.size())
         self.imageLabel.setAlignment(Qt.AlignCenter)
