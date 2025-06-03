@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontDatabase
+import os
 from database.DataQueries import getPlayersWithMostWins 
 from gui.core.confiq import Colors, Constants
 
@@ -11,6 +12,30 @@ class GameOverOverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedSize(400, 350)
+
+        # --- Font Setup ---
+        self.font_family = QFont().family() # Fallback default
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Assuming assets are in gui/assets/fonts relative to this file (gui/gameOverDialog.py)
+        fonts_dir = os.path.join(current_dir, "assets", "fonts") 
+
+        bold_font_filename = "JetBrainsMono-Bold.ttf"
+        bold_font_path = os.path.join(fonts_dir, bold_font_filename)
+        
+        bold_font_id = QFontDatabase.addApplicationFont(bold_font_path)
+        if bold_font_id != -1:
+            loaded_bold_families = QFontDatabase.applicationFontFamilies(bold_font_id)
+            if loaded_bold_families:
+                self.font_family = loaded_bold_families[0]
+        else:
+            print(f"Warning: Failed to load font from {bold_font_path} in GameOverDialog")
+
+        self.status_label_font = QFont(self.font_family, 20, QFont.Bold)
+        self.title_font = QFont(self.font_family, 16, QFont.Bold)
+        self.table_header_font = QFont(self.font_family, 14, QFont.Bold)
+        self.table_content_font = QFont(self.font_family, 12, QFont.Bold)
+        self.button_font = QFont(self.font_family, 16, QFont.Bold)
+
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {Colors.TERTIARY}; 
@@ -23,18 +48,34 @@ class GameOverOverlayWidget(QWidget):
                 border: none;
                 gridline-color: {Colors.SECONDARY}; 
             }}
-            QHeaderView::section {{
-                background-color: {Colors.PRIMARY};
+            QHeaderView {{ /* Horizontal header container */
+                background-color: {Colors.PRIMARY}; /* Background of the entire header bar */
+                border-top: 1px solid {Colors.SECONDARY};
+                border-left: 1px solid {Colors.SECONDARY};
+                border-right: 1px solid {Colors.SECONDARY};
+                border-bottom: 1px solid {Colors.SECONDARY}; /* Line above table cells, completes the QHeaderView box */
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                border-bottom-left-radius: 0px; /* Flat bottom for QHeaderView itself */
+                border-bottom-right-radius: 0px; /* Flat bottom for QHeaderView itself */
+            }}
+            QHeaderView::section {{ /* Individual header sections: Player, Wins, Losses */
+                background-color: transparent; /* Make sections transparent to show QHeaderView's background */
                 color: {Colors.FONT_PRIMARY};
                 padding: 4px;
-                border: 1px solid {Colors.SECONDARY};
+                border: none; /* Remove default borders for sections */
+                /* border-bottom: 1px solid {Colors.SECONDARY}; Removed, QHeaderView handles its own bottom border */
+                border-right: 1px solid {Colors.SECONDARY}; /* Vertical separator line */
+            }}
+            QHeaderView::section:last {{
+                border-right: none; /* Last section should not have a right separator line */
             }}
             QPushButton {{
                 background-color: {Colors.PRIMARY};
                 color: {Colors.FONT_PRIMARY};
                 border: 1px solid {Colors.SECONDARY};
                 padding: 10px;
-                font-size: 16px;
+                /* font-size: 16px; */ /* Removed as font is set directly */
                 border-radius: 5px;
             }}
             QPushButton:hover {{
@@ -48,18 +89,13 @@ class GameOverOverlayWidget(QWidget):
 
         # Win Status Message
         self.statusLabel = QLabel("Game Over Placeholder")
-        font = QFont()
-        font.setPointSize(20)
-        font.setBold(True)
-        self.statusLabel.setFont(font)
+        self.statusLabel.setFont(self.status_label_font) 
         self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.statusLabel)
 
         # Scoreboard Title
         self.scoreboardTitleLabel = QLabel("Leaderboard")
-        font_title = QFont()
-        font_title.setPointSize(16)
-        self.scoreboardTitleLabel.setFont(font_title)
+        self.scoreboardTitleLabel.setFont(self.title_font) 
         self.scoreboardTitleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.scoreboardTitleLabel)
 
@@ -67,8 +103,9 @@ class GameOverOverlayWidget(QWidget):
         self.scoreboardTable = QTableWidget()
         self.scoreboardTable.setColumnCount(3)
         self.scoreboardTable.setHorizontalHeaderLabels(["Player", "Wins", "Losses"])
-        self.scoreboardTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.scoreboardTable.verticalHeader().setVisible(False) # Hide row numbers
+        self.scoreboardTable.horizontalHeader().setFont(self.table_header_font) 
+        self.scoreboardTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch) # Ensured this line is present
+        self.scoreboardTable.verticalHeader().setVisible(False) 
         self.scoreboardTable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.scoreboardTable.setMaximumHeight(150)
         layout.addWidget(self.scoreboardTable)
@@ -77,6 +114,9 @@ class GameOverOverlayWidget(QWidget):
         button_layout = QHBoxLayout()
         self.restartButton = QPushButton("Restart Game")
         self.mainMenuButton = QPushButton("Game Select")
+
+        self.restartButton.setFont(self.button_font) 
+        self.mainMenuButton.setFont(self.button_font) 
 
         self.restartButton.clicked.connect(self.restartClicked.emit)
         self.mainMenuButton.clicked.connect(self.mainMenuClicked.emit)
@@ -101,6 +141,7 @@ class GameOverOverlayWidget(QWidget):
                 for col in range(3):
                     item = self.scoreboardTable.item(i, col)
                     if item:
+                        item.setFont(self.table_content_font)
                         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
         except Exception as e:
