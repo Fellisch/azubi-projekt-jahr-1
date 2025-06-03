@@ -69,7 +69,7 @@ class RulesToggle(QWidget):
             self.toggleButton.setIcon(icon)
             self.toggleButton.setIconSize(QSize(40, 40)) # Set icon size
         else:
-            print(f"Warning: Rules button icon not found at {icon_path}. Using fallback text.")
+            # print(f"Warning: Rules button icon not found at {icon_path}. Using fallback text.")
             self.toggleButton.setText("!") # Fallback text
 
         self.toggleButton.setStyleSheet(f""" # Stylesheet modified

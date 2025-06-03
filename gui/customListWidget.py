@@ -88,7 +88,7 @@ class CustomListWidget(QWidget):
         else:
             pos = self.display_label.mapToGlobal(self.display_label.rect().bottomLeft())
             self.list_widget.move(pos)
-            self.list_widget.resize(self.display_label.width(), min(150, len(self.items) * (24 + 10))) # Adjusted height calculation based on new padding (12px*2 + text)
+            self.list_widget.resize(self.display_label.width(), min(150, len(self.items) * (34))) # Adjusted height based on padding 12px * 2 + 10px text approx
             self.list_widget.show()
             self.is_open = True
             QApplication.instance().installEventFilter(self)

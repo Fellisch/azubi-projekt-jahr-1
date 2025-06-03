@@ -26,7 +26,7 @@ class MyButton(QPushButton):
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
             self.setFont(QFont(font_family, fontSize))
         else:
-            print("Failed to load font")
+            pass # Failed to load font
 
         self.setCursor(QCursor(Qt.PointingHandCursor))
 

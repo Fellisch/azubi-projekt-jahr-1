@@ -16,12 +16,12 @@ class ImageWidget(QLabel):
         # Resolve full path, searching all subdirectories
         image_path = self._find_image_path(assets_dir, image_name)
         if not image_path:
-            print(f"[ImageWidget] Image '{image_name}' not found in assets.")
+            # print(f"[ImageWidget] Image '{image_name}' not found in assets.") # Silently fail or log appropriately
             return
 
         pixmap = QPixmap(image_path)
         if pixmap.isNull():
-            print(f"[ImageWidget] Failed to load image: {image_path}")
+            # print(f"[ImageWidget] Failed to load image: {image_path}") # Silently fail or log appropriately
             return
 
         if max_size:

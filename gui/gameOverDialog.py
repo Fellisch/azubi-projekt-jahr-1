@@ -13,10 +13,8 @@ class GameOverOverlayWidget(QWidget):
         super().__init__(parent)
         self.setFixedSize(400, 350)
 
-        # --- Font Setup ---
-        self.font_family = QFont().family() # Fallback default
+        self.font_family = QFont().family()
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        # Assuming assets are in gui/assets/fonts relative to this file (gui/gameOverDialog.py)
         fonts_dir = os.path.join(current_dir, "assets", "fonts") 
 
         bold_font_filename = "JetBrainsMono-Bold.ttf"
@@ -28,7 +26,7 @@ class GameOverOverlayWidget(QWidget):
             if loaded_bold_families:
                 self.font_family = loaded_bold_families[0]
         else:
-            print(f"Warning: Failed to load font from {bold_font_path} in GameOverDialog")
+            pass # Warning: Failed to load font
 
         self.status_label_font = QFont(self.font_family, 20, QFont.Bold)
         self.title_font = QFont(self.font_family, 16, QFont.Bold)
@@ -48,34 +46,32 @@ class GameOverOverlayWidget(QWidget):
                 border: none;
                 gridline-color: {Colors.SECONDARY}; 
             }}
-            QHeaderView {{ /* Horizontal header container */
-                background-color: {Colors.PRIMARY}; /* Background of the entire header bar */
+            QHeaderView {{
+                background-color: {Colors.PRIMARY};
                 border-top: 1px solid {Colors.SECONDARY};
                 border-left: 1px solid {Colors.SECONDARY};
                 border-right: 1px solid {Colors.SECONDARY};
-                border-bottom: 1px solid {Colors.SECONDARY}; /* Line above table cells, completes the QHeaderView box */
+                border-bottom: 1px solid {Colors.SECONDARY};
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
-                border-bottom-left-radius: 0px; /* Flat bottom for QHeaderView itself */
-                border-bottom-right-radius: 0px; /* Flat bottom for QHeaderView itself */
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
             }}
-            QHeaderView::section {{ /* Individual header sections: Player, Wins, Losses */
-                background-color: transparent; /* Make sections transparent to show QHeaderView's background */
+            QHeaderView::section {{
+                background-color: transparent;
                 color: {Colors.FONT_PRIMARY};
                 padding: 4px;
-                border: none; /* Remove default borders for sections */
-                /* border-bottom: 1px solid {Colors.SECONDARY}; Removed, QHeaderView handles its own bottom border */
-                border-right: 1px solid {Colors.SECONDARY}; /* Vertical separator line */
+                border: none;
+                border-right: 1px solid {Colors.SECONDARY};
             }}
             QHeaderView::section:last {{
-                border-right: none; /* Last section should not have a right separator line */
+                border-right: none;
             }}
             QPushButton {{
                 background-color: {Colors.PRIMARY};
                 color: {Colors.FONT_PRIMARY};
                 border: 1px solid {Colors.SECONDARY};
                 padding: 10px;
-                /* font-size: 16px; */ /* Removed as font is set directly */
                 border-radius: 5px;
             }}
             QPushButton:hover {{
@@ -87,30 +83,26 @@ class GameOverOverlayWidget(QWidget):
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        # Win Status Message
         self.statusLabel = QLabel("Game Over Placeholder")
         self.statusLabel.setFont(self.status_label_font) 
         self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.statusLabel)
 
-        # Scoreboard Title
         self.scoreboardTitleLabel = QLabel("Leaderboard")
         self.scoreboardTitleLabel.setFont(self.title_font) 
         self.scoreboardTitleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.scoreboardTitleLabel)
 
-        # Scoreboard Table
         self.scoreboardTable = QTableWidget()
         self.scoreboardTable.setColumnCount(3)
         self.scoreboardTable.setHorizontalHeaderLabels(["Player", "Wins", "Losses"])
         self.scoreboardTable.horizontalHeader().setFont(self.table_header_font) 
-        self.scoreboardTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch) # Ensured this line is present
+        self.scoreboardTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.scoreboardTable.verticalHeader().setVisible(False) 
         self.scoreboardTable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.scoreboardTable.setMaximumHeight(150)
         layout.addWidget(self.scoreboardTable)
 
-        # Buttons
         button_layout = QHBoxLayout()
         self.restartButton = QPushButton("Restart Game")
         self.mainMenuButton = QPushButton("Game Select")
@@ -125,7 +117,7 @@ class GameOverOverlayWidget(QWidget):
         button_layout.addWidget(self.mainMenuButton)
         layout.addLayout(button_layout)
         
-        self.hide() # Initially hidden
+        self.hide()
 
     def _populate_scoreboard(self, gamemode, difficulty):
         try:
@@ -145,21 +137,16 @@ class GameOverOverlayWidget(QWidget):
                         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
         except Exception as e:
-            print(f"Error populating scoreboard in GameOverOverlayWidget: {e}")
+            # print(f"Error populating scoreboard in GameOverOverlayWidget: {e}") # Intentionally keep this print for now as it's an exception handler
             self.scoreboardTable.setRowCount(1)
             self.scoreboardTable.setColumnCount(1)
             error_item = QTableWidgetItem("Could not load scoreboard.")
             error_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.scoreboardTable.setItem(0, 0, error_item)
-            self.scoreboardTable.setSpan(0, 0, 1, 1) # Span across the single column
-            # Ensure a reset for next time if needed
-            # self.scoreboardTable.setColumnCount(3) 
-            # self.scoreboardTable.setHorizontalHeaderLabels(["Player", "Wins", "Losses"])
-
+            self.scoreboardTable.setSpan(0, 0, 1, 1)
 
     def update_contents(self, status_message, gamemode_int, difficulty_int):
         self.statusLabel.setText(status_message)
-         # Reset table before populating
         self.scoreboardTable.clearContents()
         self.scoreboardTable.setRowCount(0)
         self.scoreboardTable.setColumnCount(3) 
@@ -168,18 +155,15 @@ class GameOverOverlayWidget(QWidget):
 
 
 if __name__ == '__main__':
-    # For testing the dialog independently
     from PySide6.QtWidgets import QApplication
     import sys
 
-    # Mock data and parameters for testing
     mock_win_status = "You Won!"
-    mock_gamemode = 1 # Example gamemode int
-    mock_difficulty = 2 # Example difficulty int
+    mock_gamemode = 1
+    mock_difficulty = 2
 
-    # Mocking the database function for standalone testing
-    def mock_getPlayersWithMostWins_for_test(gamemode, difficulty): # Renamed for clarity
-        print(f"Mock mock_getPlayersWithMostWins_for_test called with gamemode={{gamemode}}, difficulty={{difficulty}}")
+    def mock_getPlayersWithMostWins_for_test(gamemode, difficulty):
+        # print(f"Mock mock_getPlayersWithMostWins_for_test called with gamemode={{gamemode}}, difficulty={{difficulty}}")
         return [
             ("PlayerA", 10, 2),
             ("PlayerB", 8, 1),
@@ -190,13 +174,12 @@ if __name__ == '__main__':
         ]
     
     app = QApplication(sys.argv)
-    # Pass the mock function to the dialog
     dialog = GameOverOverlayWidget()
     
     def on_restart():
-        print("Restart chosen")
+        pass # Restart chosen
     def on_main_menu():
-        print("Main Menu chosen")
+        pass # Main Menu chosen
 
     dialog.restartClicked.connect(on_restart)
     dialog.mainMenuClicked.connect(on_main_menu)

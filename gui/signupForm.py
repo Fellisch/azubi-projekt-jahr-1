@@ -73,30 +73,22 @@ class SignupForm(MenuContainer):
     def handle_signup_attempt(self):
         username = self.usernameInput.text()
         password = self.passwordInput.text()
-        # Optional: Add validation for empty fields or password mismatch here
         if not username or not password:
             self.display_error("Username and password cannot be empty.")
-            print("ERROR: Username and password cannot be empty.")
             return
             
-        print(f"Signup attempt: User: {username}") # Password not printed for security
         self.signupAttempted.emit(username, password)
 
     def handle_login_link_activated(self):
-        print("Login link activated on signup form.")
         self.loginLinkActivated.emit()
 
     def handle_guest_access(self):
-        print("Guest button clicked on signup form.")
         self.guestAccessRequested.emit()
 
     def display_error(self, message):
-        # Placeholder: Implement a way to show errors on the form
-        # e.g., by adding an error QLabel to the layout
         if not hasattr(self, 'errorLabel'):
             self.errorLabel = QLabel()
             self.errorLabel.setStyleSheet("color: red; font-size: 14px;")
-            # Insert error label, e.g., before the main signup button
             self.layout.insertWidget(self.layout.indexOf(self.signupBtnMain), self.errorLabel, alignment=Qt.AlignHCenter)
         self.errorLabel.setText(message)
         self.errorLabel.show()
