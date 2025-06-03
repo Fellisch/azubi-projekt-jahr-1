@@ -31,12 +31,21 @@ class Minimax:
             possible_first_moves = current_live_game.get_possible_moves(self.ai_player_piece)
             possible_first_moves = self._sort_moves(possible_first_moves, current_live_game, self.ai_player_piece)
             clone_func = lambda g: g.clone()
-        else:  # Dame oder andere Spiele
-            possible_first_moves = current_live_game.get_all_possible_moves(self.ai_player_piece) if hasattr(current_live_game, 'get_all_possible_moves') else current_live_game.get_possible_moves(self.ai_player_piece)
+        else:
+            possible_first_moves = current_live_game.get_all_possible_moves(self.ai_player_piece) if hasattr(
+                current_live_game, 'get_all_possible_moves') else current_live_game.get_possible_moves(
+                self.ai_player_piece)
             clone_func = lambda g: copy.deepcopy(g)
 
         if not possible_first_moves:
             return None
+
+        # Prüfe auf sofortigen Gewinnzug
+        for move in possible_first_moves:
+            simulated_game = clone_func(current_live_game)
+            simulated_game.make_move(move, self.ai_player_piece)
+            if simulated_game.check_win_condition() == "ai_wins":
+                return move  # Sofortiger Gewinnzug
 
         for move in possible_first_moves:
             simulated_game_after_ai_move = clone_func(current_live_game)
