@@ -23,10 +23,10 @@ class Board(QWidget):
         for row in range(board_size):
             visual_row = board_size - 1 - row if is_dame else row
             for col in range(board_size):
-                cellType = CellType.LIGHT if (row + col) % 2 == 0 else CellType.DARK
+                cellType = CellType.DARK if (row + col) % 2 == 0 else CellType.LIGHT
                 image_path = None
                 if possible_moves and (row, col) in possible_moves:
-                    image_path = "test.svg"
+                    image_path = "moveIndicator.svg"
                 else:
                     piece = board_state[row][col]
                     if is_dame:
@@ -36,9 +36,9 @@ class Board(QWidget):
                             image_path = 'blackPiece.svg'
                     else:
                         if piece == 'X':
-                            image_path = 'test.svg'
+                            image_path = 'xMark.svg'
                         elif piece == 'O':
-                            image_path = 'test.svg'
+                            image_path = 'oMark.svg'
                 cell = BoardCell(image=image_path, cellType=cellType, position=(row, col))
                 layout.addWidget(cell, visual_row, col)
                 self.cells[(row, col)] = cell
@@ -61,11 +61,11 @@ class Board(QWidget):
             if isinstance(move, (list, tuple)) and len(move) >= 3:
                 end_pos = tuple(move[2])
                 if end_pos in self.cells:
-                    self.cells[end_pos].set_image("test.svg")
+                    self.cells[end_pos].set_image("moveIndicator.svg")
                     self.cells[end_pos].update()
             elif isinstance(move, tuple) and len(move) == 2:
                 if move in self.cells:
-                    self.cells[move].set_image("test.svg")
+                    self.cells[move].set_image("moveIndicator.svg")
                     self.cells[move].update()
 
     def update_board(self, new_board_state):
@@ -76,6 +76,6 @@ class Board(QWidget):
                 if self.is_dame:
                     image = 'whitePiece.svg' if piece == 'W' else 'blackPiece.svg' if piece == 'B' else None
                 else:
-                    image = 'test.svg' if piece == 'X' else 'test.svg' if piece == 'O' else None
+                    image = 'xMark.svg' if piece == 'X' else 'oMark.svg' if piece == 'O' else None
                 self.cells[(row, col)].set_image(image)
         self.update()

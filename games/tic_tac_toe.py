@@ -90,11 +90,13 @@ class TicTacToe(BaseGame):
         return 0
 
     def get_rules(self):
-        return (f"Tic-Tac-Toe (Vier gewinnt) on a {self.board_size}x{self.board_size} board.\n"
-                f"Players take turns placing their mark ('{self.human_player_mark}' or '{self.ai_player_mark}').\n"
-                f"The first player to get 4 of their marks in a row, column, or diagonal wins.\n"
-                f"If the board is filled and no player has won, the game is a draw.\n"
-                f"Human plays as '{self.human_player_mark}', AI plays as '{self.ai_player_mark}'. Human starts.")
+        return [
+            f"Tic-Tac-Toe (Vier gewinnt) on a {self.board_size}x{self.board_size} board.",
+            f"Players take turns placing their mark ('{self.human_player_mark}' or '{self.ai_player_mark}').",
+            f"The first player to get 4 of their marks in a row, column, or diagonal wins.",
+            f"If the board is filled and no player has won, the game is a draw.",
+            f"Human plays as '{self.human_player_mark}', AI plays as '{self.ai_player_mark}'. Human starts."
+        ]
 
     def get_ai_move(self):
         """Returns the AI's move using Minimax algorithm."""

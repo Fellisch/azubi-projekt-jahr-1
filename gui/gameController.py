@@ -64,7 +64,8 @@ class GameController:
                             return self.possible_moves, None
                         else:
                             self.reset_selection()
-                            return None, self.make_ai_move()
+                            # AI move will be triggered by MainWindow after a delay
+                            return None, "ai_turn_pending"
                     else:
                         self.reset_selection()
                         return None, None
@@ -77,7 +78,8 @@ class GameController:
             win_status = self.game.check_win_condition()
             if win_status:
                 return None, win_status
-            return None, self.make_ai_move()
+            # AI move will be triggered by MainWindow after a delay
+            return None, "ai_turn_pending"
         return None, None
 
     def _is_valid_position(self, position):
@@ -104,24 +106,50 @@ class GameController:
                     self.game.ai_pieces.add((row, col))
 
     def make_ai_move(self):
-        if self.game.is_game_over():
-            return None
-        while self.game.current_player == "ai" and not self.game.is_game_over():
-            ai = Minimax(self.game, max_depth=self.difficulty)
-            ai_move = ai.find_best_move(self.game.ai_player_piece if self.game_type == "Dame" else self.game.ai_player_mark)
-            if ai_move:
-                if self.game_type == "Dame":
-                    valid, further_capture = self.game.make_move(ai_move, self.game.ai_player_piece)
-                    if valid:
-                        if not further_capture:
-                            break
-                else:
-                    valid = self.game.make_move(ai_move, self.game.ai_player_mark)
-                    if valid:
-                        break
+        if self.game.is_game_over() or self.game.current_player != "ai":
+            return self.game.check_win_condition(), False # Return win status and no more moves
+
+        ai = Minimax(self.game, max_depth=self.difficulty)
+        ai_player_id = self.game.ai_player_piece if self.game_type == "Dame" else self.game.ai_player_mark
+        ai_move = ai.find_best_move(ai_player_id)
+
+        if not ai_move:
+            # No move found, switch player to prevent infinite loop if AI has no moves but game not over
+            if self.game_type == "Dame": # Dame has explicit player switching in make_move
+                 pass # If no dame move, current player may be stuck - win condition should handle this.
+            else: # TicTacToe may need explicit player switch if AI has no valid moves (should not happen in normal TTT)
+                self.game.switch_player()
+            return self.game.check_win_condition(), False
+
+        further_capture_pending = False
+        if self.game_type == "Dame":
+            valid, further_capture_after_move = self.game.make_move(ai_move, self.game.ai_player_piece)
+            if valid:
+                win_status = self.game.check_win_condition()
+                if win_status: # Game ended by this move
+                    return win_status, False
+                if further_capture_after_move:
+                    further_capture_pending = True # AI has another capture
+                # If no further capture, player was switched by game.make_move
             else:
-                break
-        return self.game.check_win_condition()
+                # Invalid AI move somehow, should be rare. End AI turn.
+                return self.game.check_win_condition(), False
+        else: # TicTacToe
+            valid = self.game.make_move(ai_move, self.game.ai_player_mark)
+            if not valid:
+                 # Invalid AI move, should be rare. End AI turn.
+                return self.game.check_win_condition(), False
+            # For TicTacToe, player is switched by game.make_move if move is valid and no win.
+        
+        current_win_status = self.game.check_win_condition()
+        if current_win_status:
+            return current_win_status, False # Game over, no more AI moves
+
+        # If it's Dame and a further capture is pending, AI still has moves.
+        # Otherwise, player has been switched by game.make_move, so AI has no more moves this turn.
+        ai_has_more_moves_now = (self.game_type == "Dame" and further_capture_pending)
+        
+        return current_win_status, ai_has_more_moves_now
 
     def reset_game(self):
         self.game = self._create_game(self.game_type)

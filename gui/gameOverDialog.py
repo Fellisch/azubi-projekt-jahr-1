@@ -1,25 +1,53 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
-from database.DataQueries import getPlayersWithMostWins # Assuming this path is correct relative to project root
-from gui.core.confiq import Colors
+from database.DataQueries import getPlayersWithMostWins 
+from gui.core.confiq import Colors, Constants
 
-class GameOverDialog(QDialog):
+class GameOverOverlayWidget(QWidget):
     restartClicked = Signal()
     mainMenuClicked = Signal()
 
-    def __init__(self, win_status_message, gamemode_int, difficulty_int, parent=None, data_fetch_func=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Game Over")
-        self.setModal(True) # Make it a modal dialog
-        self.setStyleSheet(f"background-color: {Colors.TERTIARY}; color: {Colors.FONT_PRIMARY};")
+        self.setFixedSize(400, 350)
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {Colors.TERTIARY}; 
+                color: {Colors.FONT_PRIMARY}; 
+                border: 1px solid {Colors.SECONDARY}; 
+                border-radius: 10px;
+            }}
+            QTableWidget {{
+                background-color: {Colors.BACKGROUND_SECONDARY};
+                border: none;
+                gridline-color: {Colors.SECONDARY}; 
+            }}
+            QHeaderView::section {{
+                background-color: {Colors.PRIMARY};
+                color: {Colors.FONT_PRIMARY};
+                padding: 4px;
+                border: 1px solid {Colors.SECONDARY};
+            }}
+            QPushButton {{
+                background-color: {Colors.PRIMARY};
+                color: {Colors.FONT_PRIMARY};
+                border: 1px solid {Colors.SECONDARY};
+                padding: 10px;
+                font-size: 16px;
+                border-radius: 5px;
+            }}
+            QPushButton:hover {{
+                background-color: {Colors.CTA_HOVER};
+            }}
+        """)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
 
         # Win Status Message
-        self.statusLabel = QLabel(win_status_message)
+        self.statusLabel = QLabel("Game Over Placeholder")
         font = QFont()
         font.setPointSize(20)
         font.setBold(True)
@@ -28,7 +56,7 @@ class GameOverDialog(QDialog):
         layout.addWidget(self.statusLabel)
 
         # Scoreboard Title
-        self.scoreboardTitleLabel = QLabel("Scoreboard")
+        self.scoreboardTitleLabel = QLabel("Leaderboard")
         font_title = QFont()
         font_title.setPointSize(16)
         self.scoreboardTitleLabel.setFont(font_title)
@@ -40,87 +68,63 @@ class GameOverDialog(QDialog):
         self.scoreboardTable.setColumnCount(3)
         self.scoreboardTable.setHorizontalHeaderLabels(["Player", "Wins", "Losses"])
         self.scoreboardTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.scoreboardTable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers) # Read-only
-        self.scoreboardTable.setMaximumHeight(150) # Limit height
-        
-        # Use the provided data_fetch_func or the default imported one
-        self._data_fetch_func = data_fetch_func if data_fetch_func else getPlayersWithMostWins
-        self.populate_scoreboard(gamemode_int, difficulty_int)
+        self.scoreboardTable.verticalHeader().setVisible(False) # Hide row numbers
+        self.scoreboardTable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.scoreboardTable.setMaximumHeight(150)
         layout.addWidget(self.scoreboardTable)
 
         # Buttons
         button_layout = QHBoxLayout()
         self.restartButton = QPushButton("Restart Game")
-        self.gameMenuButton = QPushButton("Game Select")
+        self.mainMenuButton = QPushButton("Game Select")
 
-        # Corrected button_style definition
-        raw_button_style = '''
-            QPushButton {{
-                background-color: {primary_color};
-                color: {font_primary_color};
-                border: 1px solid {secondary_color};
-                padding: 10px;
-                font-size: 16px;
-                border-radius: 5px;
-            }}
-            QPushButton:hover {{
-                background-color: {cta_hover_color};
-            }}
-        '''
-        button_style = raw_button_style.format(
-            primary_color=Colors.PRIMARY,
-            font_primary_color=Colors.FONT_PRIMARY,
-            secondary_color=Colors.SECONDARY,
-            cta_hover_color=Colors.CTA_HOVER
-        )
-
-        self.restartButton.setStyleSheet(button_style)
-        self.gameMenuButton.setStyleSheet(button_style)
-
-        self.restartButton.clicked.connect(self.handle_restart)
-        self.gameMenuButton.clicked.connect(self.handle_main_menu)
+        self.restartButton.clicked.connect(self.restartClicked.emit)
+        self.mainMenuButton.clicked.connect(self.mainMenuClicked.emit)
 
         button_layout.addWidget(self.restartButton)
-        button_layout.addWidget(self.gameMenuButton)
+        button_layout.addWidget(self.mainMenuButton)
         layout.addLayout(button_layout)
+        
+        self.hide() # Initially hidden
 
-        self.setFixedSize(400, 350)
-
-
-    def populate_scoreboard(self, gamemode, difficulty):
+    def _populate_scoreboard(self, gamemode, difficulty):
         try:
-            # Assuming gamemode and difficulty are already integers.
-            scores = self._data_fetch_func(gamemode=gamemode, difficulty=difficulty) # Call via self._data_fetch_func
-            
-            # Sort by wins (descending), then by losses (ascending)
+            scores = getPlayersWithMostWins(gamemode=gamemode, difficulty=difficulty)
             scores.sort(key=lambda x: (x[1], -x[2]), reverse=True) 
             
-            self.scoreboardTable.setRowCount(min(len(scores), 5)) # Show top 5 or fewer
+            self.scoreboardTable.setRowCount(min(len(scores), 5))
 
             for i, (username, wins, losses) in enumerate(scores[:5]):
                 self.scoreboardTable.setItem(i, 0, QTableWidgetItem(str(username)))
                 self.scoreboardTable.setItem(i, 1, QTableWidgetItem(str(wins)))
                 self.scoreboardTable.setItem(i, 2, QTableWidgetItem(str(losses)))
                 for col in range(3):
-                    self.scoreboardTable.item(i, col).setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    item = self.scoreboardTable.item(i, col)
+                    if item:
+                        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
         except Exception as e:
-            print(f"Error populating scoreboard: {e}")
-            # Optionally, display an error in the dialog
+            print(f"Error populating scoreboard in GameOverOverlayWidget: {e}")
             self.scoreboardTable.setRowCount(1)
-            item = QTableWidgetItem("Could not load scoreboard.")
-            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.scoreboardTable.setItem(0, 0, item)
-            self.scoreboardTable.setSpan(0,0,1,3)
+            self.scoreboardTable.setColumnCount(1)
+            error_item = QTableWidgetItem("Could not load scoreboard.")
+            error_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.scoreboardTable.setItem(0, 0, error_item)
+            self.scoreboardTable.setSpan(0, 0, 1, 1) # Span across the single column
+            # Ensure a reset for next time if needed
+            # self.scoreboardTable.setColumnCount(3) 
+            # self.scoreboardTable.setHorizontalHeaderLabels(["Player", "Wins", "Losses"])
 
 
-    def handle_restart(self):
-        self.restartClicked.emit()
-        self.accept() # Close the dialog
+    def update_contents(self, status_message, gamemode_int, difficulty_int):
+        self.statusLabel.setText(status_message)
+         # Reset table before populating
+        self.scoreboardTable.clearContents()
+        self.scoreboardTable.setRowCount(0)
+        self.scoreboardTable.setColumnCount(3) 
+        self.scoreboardTable.setHorizontalHeaderLabels(["Player", "Wins", "Losses"])
+        self._populate_scoreboard(gamemode_int, difficulty_int)
 
-    def handle_main_menu(self):
-        self.mainMenuClicked.emit()
-        self.accept() # Close the dialog
 
 if __name__ == '__main__':
     # For testing the dialog independently
@@ -146,7 +150,7 @@ if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     # Pass the mock function to the dialog
-    dialog = GameOverDialog(mock_win_status, mock_gamemode, mock_difficulty, data_fetch_func=mock_getPlayersWithMostWins_for_test)
+    dialog = GameOverOverlayWidget()
     
     def on_restart():
         print("Restart chosen")
