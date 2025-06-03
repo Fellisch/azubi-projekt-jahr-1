@@ -123,11 +123,13 @@ class TicTacToe(BaseGame):
         return ai_score - human_score if player_mark_perspective == self.ai_player_mark else human_score - ai_score
 
     def get_rules(self):
-        return (f"Tic-Tac-Toe (Vier gewinnt) on a {self.board_size}x{self.board_size} board.\n"
-                f"Players take turns placing their mark ('{self.human_player_mark}' or '{self.ai_player_mark}').\n"
-                f"The first player to get 4 of their marks in a row, column, or diagonal wins.\n"
-                f"If the board is filled and no player has won, the game is a draw.\n"
-                f"Human plays as '{self.human_player_mark}', AI plays as '{self.ai_player_mark}'. Human starts.")
+        return [
+            f"Tic-Tac-Toe (Vier gewinnt) on a {self.board_size}x{self.board_size} board.\n",
+                f"Players take turns placing their mark ('{self.human_player_mark}' or '{self.ai_player_mark}').\n",
+                f"The first player to get 4 of their marks in a row, column, or diagonal wins.\n",
+                f"If the board is filled and no player has won, the game is a draw.\n",
+                f"Human plays as '{self.human_player_mark}', AI plays as '{self.ai_player_mark}'. Human starts.",
+            ]
 
     # In games/tic_tac_toe.py
     def clone(self):
