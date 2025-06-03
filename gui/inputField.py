@@ -1,8 +1,10 @@
 from PySide6.QtWidgets import QLineEdit
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Signal, Qt
 from gui.core.confiq import Colors
 
 class InputField(QLineEdit):
+    returnPressed = Signal()
+
     def __init__(
         self,
         parent=None,
@@ -35,3 +37,8 @@ class InputField(QLineEdit):
                 color: rgba(0, 0, 0, 0.5);
             }}
         """)
+
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self.returnPressed.emit()

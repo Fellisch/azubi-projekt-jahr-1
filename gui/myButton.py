@@ -11,24 +11,29 @@ class ButtonType(Enum):
 
 class MyButton(QPushButton):
     def __init__(self, text, button_type=ButtonType.NORMAL, borderWidth=7, fontSize=18, parent=None, padding='8px 16px',
-                 background_color=None, border_color=None, text_color=Colors.FONT_PRIMARY):
+                 background_color=None, border_color=None, text_color=Colors.FONT_PRIMARY, font='jbmono'):
         super().__init__(text, parent)
 
-        font_path = os.path.join(os.path.dirname(__file__), "assets", "fonts", "SUBURBIA.ttf")
+        if font == 'jbmono':
+            font_path = os.path.join(os.path.dirname(__file__), "assets", "fonts", "JetBrainsMono-Bold.ttf")
+        elif font == 'suburbia':
+            font_path = os.path.join(os.path.dirname(__file__), "assets", "fonts", "SUBURBIA.ttf")
+        else:
+            raise ValueError("Invalid font type")
+
         font_id = QFontDatabase.addApplicationFont(font_path)
         if font_id != -1:
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
             self.setFont(QFont(font_family, fontSize))
         else:
-            print("Failed to load Suburbia font")
+            pass
 
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
         if button_type == ButtonType.NORMAL:
-            # Use provided colors or default
             bg_color = background_color if background_color else Colors.TERTIARY
             final_border_color = border_color if border_color else Colors.SECONDARY
-            final_text_color = text_color # Already has a default
+            final_text_color = text_color
 
             self.setStyleSheet(f"""
                 QPushButton {{
@@ -39,17 +44,17 @@ class MyButton(QPushButton):
                     padding: {padding};
                 }}
             """)
-            if borderWidth > 0: # Only add shadow if there's a border that implies elevation
+            if borderWidth > 0:
                 shadow = QGraphicsDropShadowEffect(self)
                 shadow.setOffset(0, 4)
                 shadow.setBlurRadius(4)
                 shadow.setColor(QColor(0, 0, 0, 64))
                 self.setGraphicsEffect(shadow)
             else:
-                self.setGraphicsEffect(None) # No shadow if no border width
+                self.setGraphicsEffect(None)
 
         elif button_type == ButtonType.LINK:
-            link_text_color = text_color if text_color != Colors.FONT_PRIMARY else "#0023C7" # Default to blue if not overridden
+            link_text_color = text_color if text_color != Colors.FONT_PRIMARY else "#0023C7"
             self.setStyleSheet(f"""
                 QPushButton {{
                     color: {link_text_color};
@@ -59,7 +64,7 @@ class MyButton(QPushButton):
                     text-decoration: underline;
                 }}
                 QPushButton:hover {{
-                    color: {Colors.CTA_HOVER}; /* Or another hover color for links */
+                    color: {Colors.CTA_HOVER};
                 }}
             """)
             self.setGraphicsEffect(None)
