@@ -1,14 +1,14 @@
 import os
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QFrame
-from PySide6.QtGui import QIcon, QFontDatabase, QFont # Added QIcon
-from PySide6.QtCore import QSize # Added QSize
-from gui.rule import Rule  # import Rule class
+from PySide6.QtGui import QIcon, QFontDatabase, QFont
+from PySide6.QtCore import QSize
+from gui.rule import Rule
 from gui.core.confiq import Colors
 
 class RulesToggle(QWidget):
     def __init__(self, game, violated_ids=None):
         super().__init__()
-        self.game = game  # Store the BaseGame instance
+        self.game = game
         self.violated_ids = violated_ids or []
 
         self.setFixedSize(250, 290)
@@ -28,8 +28,7 @@ class RulesToggle(QWidget):
         self.rulesLayout.setContentsMargins(10, 10, 10, 10)
         self.rulesLayout.setSpacing(8)
 
-        # --- Font Setup for Rules ---
-        self.rule_font_family = QFont().family() # Fallback
+        self.rule_font_family = QFont().family()
         current_font_dir = os.path.dirname(os.path.abspath(__file__))
         fonts_dir = os.path.join(current_font_dir, "assets", "fonts")
         
@@ -42,24 +41,21 @@ class RulesToggle(QWidget):
             if loaded_rule_bold_families:
                 self.rule_font_family = loaded_rule_bold_families[0]
         
-        self.rules_text_qfont = QFont(self.rule_font_family, 12, QFont.Bold) # Using 12pt size
+        self.rules_text_qfont = QFont(self.rule_font_family, 12, QFont.Bold)
 
         self.rules = []
-        # Fetch rules dynamically from the game instance
-        rules_text_list = self.game.get_rules() # Expecting a list of strings now
+        rules_text_list = self.game.get_rules()
         for idx, rule_text in enumerate(rules_text_list):
-            # Assuming Rule can take a rule_id and text, using index as a simple ID
             rule = Rule(rule_id=idx, text=rule_text.strip(), bold=False)
-            rule.setFont(self.rules_text_qfont) # Apply the custom font
+            rule.setFont(self.rules_text_qfont)
             self.rules.append(rule)
             self.rulesLayout.addWidget(rule)
 
         self.rulesWidget.setVisible(False)
 
-        self.toggleButton = QPushButton("", self.container) # Text changed to empty
+        self.toggleButton = QPushButton("", self.container)
         self.toggleButton.setFixedSize(46, 46)
 
-        # Construct path to SVG icon
         base_dir = os.path.dirname(os.path.abspath(__file__))
         assets_svg_dir = os.path.join(base_dir, "assets", "svg")
         icon_path = os.path.join(assets_svg_dir, "rulesButton.svg")
@@ -67,31 +63,25 @@ class RulesToggle(QWidget):
         if os.path.exists(icon_path):
             icon = QIcon(icon_path)
             self.toggleButton.setIcon(icon)
-            self.toggleButton.setIconSize(QSize(40, 40)) # Set icon size
+            self.toggleButton.setIconSize(QSize(40, 40))
         else:
-            # print(f"Warning: Rules button icon not found at {icon_path}. Using fallback text.")
-            self.toggleButton.setText("!") # Fallback text
+            self.toggleButton.setText("!")
 
-        self.toggleButton.setStyleSheet(f""" # Stylesheet modified
+        self.toggleButton.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
                 border: none;
-                padding: 0px; /* Remove padding that might affect icon placement */
-            }}
-            QPushButton:hover {{
-                /* Optional: Add a hover effect if desired, e.g., slight tint */
-                /* background-color: rgba(255, 255, 255, 20); */ 
+                padding: 0px;
             }}
         """)
 
-        self.toggleButton.move(188, 242) # X-coordinate changed from 215 to 201, Y is 240
+        self.toggleButton.move(188, 242)
         self.toggleButton.clicked.connect(self.toggleRules)
 
     def toggleRules(self):
         self.rulesWidget.setVisible(not self.rulesWidget.isVisible())
 
     def setViolatedRules(self, violated_ids):
-        """Update which rules are violated to change their styling dynamically."""
         self.violated_ids = violated_ids
         for rule in self.rules:
             rule.setBold(rule.rule_id in violated_ids)
