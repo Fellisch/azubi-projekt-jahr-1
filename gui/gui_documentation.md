@@ -40,14 +40,23 @@ The `CustomListWidget` class implements a custom dropdown/select widget. It cons
 ### `gameController.py`
 The `GameController` class acts as an intermediary between the game logic (from `games.dame` or `games.tic_tac_toe`) and the GUI. It manages the game state, player turns, and AI moves using the `ai.minimax.Minimax` algorithm.
 
-- **Initialization**: Takes `game_type` ("Dame" or "TicTacToe") and `difficulty`.
+- **Initialization**: Takes `game_type` ("Dame" or "TicTacToe") and `difficulty`. It also initializes an internal list `mandatory_human_captures` to keep track of required capture moves for the human player in Dame.
 - **Methods**:
     - `get_board()`: Returns the current game board state.
     - `set_difficulty(max_depth)`: Changes AI difficulty and resets the game.
-    - `handle_cell_click(position)`: Processes a human player's click. For Dame, it handles piece selection and move execution (including multi-captures). For TicTacToe, it attempts a direct move. Returns possible moves or a game status string (e.g., "ai_turn_pending", win status).
-    - `make_ai_move()`: Uses Minimax AI to find and make a move. Returns game status and a boolean indicating if the AI has more moves (for Dame multi-captures).
-    - `reset_game()`: Resets the game to its initial state.
-    - `reset_selection()`: Clears selected piece/moves (Dame).
+    - `_get_mandatory_human_captures()`: (For Dame) Checks all possible moves for the current human player and returns a list of moves that are captures. This is used to enforce mandatory capture rules.
+    - `handle_cell_click(position)`: Processes a human player's click. 
+        - For Dame, it now incorporates mandatory capture logic:
+            - At the start of the human player's turn (if no piece is selected and no mandatory captures are already identified), it calls `_get_mandatory_human_captures()`.
+            - If mandatory captures exist, piece selection is restricted to pieces that can perform one of these captures.
+            - The `possible_moves` shown for a selected piece are filtered to only include mandatory captures if any are available for that piece.
+            - When a move is attempted, it's validated to ensure it's a mandatory capture if such captures exist for the player.
+            - It handles sequences of mandatory captures (multi-jumps) by updating the `mandatory_human_captures` list to reflect only the subsequent captures available to the same piece.
+        - For TicTacToe, it attempts a direct move.
+        - Returns possible moves (for Dame, especially during multi-captures) or a game status string (e.g., "ai_turn_pending", win status).
+    - `make_ai_move()`: Uses Minimax AI to find and make a move. Returns game status and a boolean indicating if the AI has more moves (for Dame multi-captures). Clears `mandatory_human_captures` in preparation for the human player's next turn.
+    - `reset_game()`: Resets the game to its initial state, including clearing `mandatory_human_captures`.
+    - `reset_selection(clear_mandatory_captures_if_no_piece=False)`: Clears selected piece/moves (Dame). Can optionally clear `mandatory_human_captures`, for instance, when a player deselects a piece or a turn ends.
     - `_is_valid_position()`: Validates board coordinates.
     - `_resync_dame_piece_sets()`: Utility to update internal piece sets for Dame.
 

@@ -221,11 +221,11 @@ class Dame(BaseGame):
 
     def get_rules(self):
         return [
-            "Ziehen: diagonal 1 Feld vorwärts",
-            "Schlagen (Pflicht): Diagonal über Gegner auf freies Feld",
-            "Mehrfachschläge sind erlaubt & verpflichtend",
-            "Kein Springen über eigene Steine",
-            "Sieg: Gegner kann nicht ziehen oder Grundlinie mit eigenem Stein erreicht",
+            "Move: 1 square diagonally forward",
+            "Capture (mandatory): Diagonally over an opponent to a free square",
+            "Multiple captures are allowed & mandatory",
+            "No jumping over own pieces",
+            "Win: Opponent cannot move or own piece reaches opponent's baseline",
         ]
 
     def __str__(self):
