@@ -1,20 +1,20 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow
-from PySide6.QtGui import QPainter, QPen, QColor
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsColorizeEffect
+from PySide6.QtGui import QPainter, QPen, QColor, QFont
+from PySide6.QtCore import Qt, QTimer
 from gui.board import Board
 from gui.core.confiq import Colors, Constants
 from gui.window import WindowModule, Pivot
 from gui.signalBus import bus
 from gui.gameController import GameController
-from gui.gameOverDialog import GameOverDialog
 from gui.loginForm import LoginForm
 from gui.signupForm import SignupForm
 from gui.gameSetupForm import GameSetupForm
-from database.DataQueries import increaseWins, increaseLosses # Add this import
+from database.DataQueries import increaseWins, increaseLosses, getPlayersWithMostWins # Added getPlayersWithMostWins
 from gui.rules import RulesToggle  # Import RulesToggle
 from gui.myButton import MyButton  # Import MyButton
 from gui.imageWidget import ImageWidget  # Import ImageWidget
+from gui.gameOverDialog import GameOverOverlayWidget # Import the new overlay widget
 
 GAMEMODE_MAP = {
     "TicTacToe": 1,
@@ -55,14 +55,18 @@ class MainWindow(QMainWindow):
         self.board = None
         self.current_difficulty = 3
         self.current_user_id = None
-        self.rules_toggle = None  # Initialize RulesToggle
-        self.image = None  # Initialize ImageWidget for homepage
-        self.play_button = None  # Initialize play button for homepage
+        self.rules_toggle = None
+        self.image = None
+        self.play_button = None
+        self.is_ai_thinking = False
+        
+        self.game_over_overlay = None # Initialize for the new overlay widget
 
-        self._setup_homepage()  # Setup homepage first
+        self._setup_homepage()
         self._setup_login_form()
         self._setup_signup_form()
         self._setup_game_selection_ui()
+        self._setup_game_over_overlay() # NEW: Setup the overlay instance
 
         bus.cellClicked.connect(self.handle_cell_click)
 
@@ -139,16 +143,45 @@ class MainWindow(QMainWindow):
         else:
             self.rules_toggle = None
 
+    def _setup_game_over_overlay(self):
+        self.game_over_overlay = GameOverOverlayWidget(parent=self.windowModule) 
+        
+        # Add the widget to contentFrame. Actual positioning will be done when shown.
+        # Pass (0,0) and TOP_LEFT as initial placement as it will be moved before showing.
+        self.windowModule.addChildWidget(
+            self.game_over_overlay, 
+            0, 
+            0, 
+            Pivot.TOP_LEFT 
+        )
+
+        self.game_over_overlay.restartClicked.connect(self._handle_restart_from_overlay)
+        self.game_over_overlay.mainMenuClicked.connect(self._handle_main_menu_from_overlay)
+        # GameOverOverlayWidget hides itself in its __init__
+
+    def _handle_restart_from_overlay(self):
+        self.game_over_overlay.hide()
+        if self.board and hasattr(self, 'board_colorize_effect') and self.board.graphicsEffect() == self.board_colorize_effect:
+            self.board.setGraphicsEffect(None)
+            del self.board_colorize_effect
+        self.handle_restart_game()
+
+    def _handle_main_menu_from_overlay(self):
+        self.game_over_overlay.hide()
+        if self.board and hasattr(self, 'board_colorize_effect') and self.board.graphicsEffect() == self.board_colorize_effect:
+            self.board.setGraphicsEffect(None)
+            del self.board_colorize_effect
+        self._show_game_selection_view()
+
     def _show_homepage(self):
         self.image.show()
         self.play_button.show()
         self.login_form.hide()
         self.signup_form.hide()
         self.game_setup_form.hide()
-        if self.board:
-            self.board.hide()
-        if self.rules_toggle:
-            self.rules_toggle.hide()
+        if self.board: self.board.hide()
+        if self.rules_toggle: self.rules_toggle.hide()
+        if self.game_over_overlay: self.game_over_overlay.hide() # Ensure overlay is hidden
 
     def _show_login_view(self):
         self.image.hide()
@@ -156,10 +189,9 @@ class MainWindow(QMainWindow):
         self.login_form.show()
         self.signup_form.hide()
         self.game_setup_form.hide()
-        if self.board:
-            self.board.hide()
-        if self.rules_toggle:
-            self.rules_toggle.hide()
+        if self.board: self.board.hide()
+        if self.rules_toggle: self.rules_toggle.hide()
+        if self.game_over_overlay: self.game_over_overlay.hide()
 
     def _show_signup_view(self):
         self.image.hide()
@@ -168,10 +200,9 @@ class MainWindow(QMainWindow):
         self.signup_form.show()
         self.signup_form.clear_error()
         self.game_setup_form.hide()
-        if self.board:
-            self.board.hide()
-        if self.rules_toggle:
-            self.rules_toggle.hide()
+        if self.board: self.board.hide()
+        if self.rules_toggle: self.rules_toggle.hide()
+        if self.game_over_overlay: self.game_over_overlay.hide()
 
     def _show_game_selection_view(self):
         self.image.hide()
@@ -184,8 +215,8 @@ class MainWindow(QMainWindow):
             self.board = None
         if self.controller:
             self.controller = None
-        if self.rules_toggle:
-            self.rules_toggle.hide()
+        if self.rules_toggle: self.rules_toggle.hide()
+        if self.game_over_overlay: self.game_over_overlay.hide()
 
     def _show_board_view(self):
         self.image.hide()
@@ -193,12 +224,12 @@ class MainWindow(QMainWindow):
         self.login_form.hide()
         self.signup_form.hide()
         self.game_setup_form.hide()
-        if self.board:
-            self.board.show()
-        self._setup_rules_toggle()  # Recreate RulesToggle with the current game
+        if self.board: self.board.show()
+        self._setup_rules_toggle()
         if self.rules_toggle:
             self.rules_toggle.show()
             self._update_violated_rules()
+        if self.game_over_overlay: self.game_over_overlay.hide()
 
     def _handle_guest_access(self):
         print("Guest access requested. Showing game selection.")
@@ -268,6 +299,10 @@ class MainWindow(QMainWindow):
         self._show_board_view()
 
     def handle_cell_click(self, position):
+        if self.is_ai_thinking: # Ignore clicks if AI is processing
+            print("AI is thinking, click ignored.")
+            return
+
         if not self.controller or not self.board:
             return
         possible_moves, win_status = self.controller.handle_cell_click(position)
@@ -275,9 +310,34 @@ class MainWindow(QMainWindow):
             self.board.show_possible_moves(possible_moves)
         else:
             self.board.update_board(self.controller.get_board())
-        self._update_violated_rules()
-        if win_status:
+        
+        if win_status == "ai_turn_pending":
+            self.is_ai_thinking = True # Set flag
+            QTimer.singleShot(1000, self._process_ai_move) # 1-second delay
+        elif win_status:
             self.show_game_over(win_status)
+        self._update_violated_rules() # Moved here to update after human move or AI move processed immediately
+
+    def _process_ai_move(self):
+        if not self.controller or not self.board:
+            self.is_ai_thinking = False # Reset flag in case of error
+            return
+
+        win_status_after_ai, ai_has_more_moves = self.controller.make_ai_move()
+        
+        self.board.update_board(self.controller.get_board())
+        self.board.show_possible_moves([]) # Clear any previous possible moves
+        self._update_violated_rules() # Update rules after AI move
+
+        if win_status_after_ai:
+            self.show_game_over(win_status_after_ai)
+            self.is_ai_thinking = False # Game is over, AI stops thinking
+        elif ai_has_more_moves:
+            # AI has more moves (e.g., multi-capture in Dame), schedule next step
+            QTimer.singleShot(1000, self._process_ai_move) # Keep self.is_ai_thinking = True
+        else:
+            # AI turn is fully complete
+            self.is_ai_thinking = False # Reset flag
 
     def _update_violated_rules(self):
         if not self.controller or not self.rules_toggle:
@@ -306,10 +366,9 @@ class MainWindow(QMainWindow):
         if not self.controller: return
         msg = "You win!" if win_status == "human_wins" else "AI wins!" if win_status == "ai_wins" else "It's a Draw!"
 
-        gamemode_int = GAMEMODE_MAP.get(self.controller.game_type, 0) # tic_tac_toe -> 1, dame -> 2
-        difficulty_int = self.controller.difficulty # 1, 3, 5
+        gamemode_int = GAMEMODE_MAP.get(self.controller.game_type, 0)
+        difficulty_int = self.controller.difficulty
 
-        # Record win/loss if a user is logged in
         if self.current_user_id is not None:
             if win_status == "human_wins":
                 increaseWins(id=self.current_user_id, gamemode=gamemode_int, difficulty=difficulty_int)
@@ -317,14 +376,42 @@ class MainWindow(QMainWindow):
             elif win_status == "ai_wins":
                 increaseLosses(id=self.current_user_id, gamemode=gamemode_int, difficulty=difficulty_int)
                 print(f"Recorded loss for user {self.current_user_id} in {self.controller.game_type} (diff: {difficulty_int})")
-            # Draws are not currently recorded in win/loss stats
         else:
             print("Guest player. Score not recorded.")
 
-        dialog = GameOverDialog(msg, gamemode_int, difficulty_int, self)
-        dialog.restartClicked.connect(self.handle_restart_game)
-        dialog.mainMenuClicked.connect(self._show_game_selection_view)
-        dialog.exec()
+        if self.board:
+            self.board_colorize_effect = QGraphicsColorizeEffect()
+            self.board_colorize_effect.setColor(Qt.GlobalColor.gray)
+            self.board_colorize_effect.setStrength(0.8)
+            self.board.setGraphicsEffect(self.board_colorize_effect)
+
+        self.game_over_overlay.update_contents(msg, gamemode_int, difficulty_int)
+        
+        # Calculate position just before showing, when parent (contentFrame) dimensions are stable
+        if self.windowModule and self.windowModule.contentFrame and self.game_over_overlay:
+            content_w = self.windowModule.contentFrame.width()
+            content_h = self.windowModule.contentFrame.height()
+            overlay_s = self.game_over_overlay.size() # This is its fixed size (400x350)
+
+            if content_w > 0 and content_h > 0: # Ensure content frame has valid dimensions
+                pos_x = (content_w - overlay_s.width()) / 2
+                pos_y = (content_h - overlay_s.height()) / 2
+                self.game_over_overlay.move(int(pos_x), int(pos_y))
+            else:
+                print("Warning: contentFrame has zero dimensions when trying to position game_over_overlay.")
+        
+        # if self.board: self.board.hide() # DO NOT hide the board (already commented out)
+        # if self.rules_toggle: self.rules_toggle.hide() # DO NOT hide rules toggle (already commented out)
+        
+        # Still hide other main views that are not part of the game screen itself
+        self.login_form.hide()
+        self.signup_form.hide()
+        self.game_setup_form.hide()
+        self.image.hide()
+        self.play_button.hide()
+
+        self.game_over_overlay.show()
+        self.game_over_overlay.raise_() # Bring to front
 
     def handle_restart_game(self):
         if self.controller:
