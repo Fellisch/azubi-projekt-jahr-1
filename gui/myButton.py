@@ -11,16 +11,22 @@ class ButtonType(Enum):
 
 class MyButton(QPushButton):
     def __init__(self, text, button_type=ButtonType.NORMAL, borderWidth=7, fontSize=18, parent=None, padding='8px 16px',
-                 background_color=None, border_color=None, text_color=Colors.FONT_PRIMARY):
+                 background_color=None, border_color=None, text_color=Colors.FONT_PRIMARY, font='jbmono'):
         super().__init__(text, parent)
 
-        font_path = os.path.join(os.path.dirname(__file__), "assets", "fonts", "SUBURBIA.ttf")
+        if font == 'jbmono':
+            font_path = os.path.join(os.path.dirname(__file__), "assets", "fonts", "JetBrainsMono-Bold.ttf")
+        elif font == 'suburbia':
+            font_path = os.path.join(os.path.dirname(__file__), "assets", "fonts", "SUBURBIA.ttf")
+        else:
+            raise ValueError("Invalid font type")
+
         font_id = QFontDatabase.addApplicationFont(font_path)
         if font_id != -1:
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
             self.setFont(QFont(font_family, fontSize))
         else:
-            print("Failed to load Suburbia font")
+            pass # Failed to load font
 
         self.setCursor(QCursor(Qt.PointingHandCursor))
 

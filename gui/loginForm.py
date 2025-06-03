@@ -72,6 +72,9 @@ class LoginForm(MenuContainer):
         self.guestBtn.clicked.connect(self.handle_guest_access)
         self.signupBtn.clicked.connect(self.handle_signup_request)
 
+        self.usernameInput.returnPressed.connect(self.handle_login_attempt)
+        self.passwordInput.returnPressed.connect(self.handle_login_attempt)
+
     def handle_login_attempt(self):
         self.clear_error() # Clear previous errors
         username = self.usernameInput.text()
@@ -81,16 +84,12 @@ class LoginForm(MenuContainer):
             self.display_error("Username and password cannot be empty.")
             return
             
-        print(f"Login attempt: User: {username}")
         self.loginAttempt.emit(username, password)
-        # The form is no longer closed here; MainWindow handles view changes
 
     def handle_guest_access(self):
-        print("Guest button clicked on login form. Emitting guestAccessRequested.")
         self.guestAccessRequested.emit()
 
     def handle_signup_request(self):
-        print("Signup button clicked on login form. Emitting signupRequested.")
         self.signupRequested.emit()
 
     # Add error display methods like in SignupForm
@@ -107,3 +106,8 @@ class LoginForm(MenuContainer):
         if hasattr(self, 'errorLabel') and self.errorLabel.isVisible():
             self.errorLabel.hide()
             self.errorLabel.setText("")
+
+    def clear_fields(self):
+        self.usernameInput.clear()
+        self.passwordInput.clear()
+        self.clear_error() # Also clear any existing error messages

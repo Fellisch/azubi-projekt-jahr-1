@@ -44,7 +44,7 @@ class GridWindowModule(WindowModule):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Stress Game Prototype")
+        self.setWindowTitle("Strategy Games")
         self.setFixedSize(Constants.BOARD_WIDTH, Constants.BOARD_HEIGHT)
         self.setStyleSheet(f"background-color: {Colors.TERTIARY};")
 
@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
         self.board = None
         self.current_difficulty = 3
         self.current_user_id = None
+        self.current_username = None # Initialize current_username
         self.rules_toggle = None
         self.image = None
         self.play_button = None
@@ -78,7 +79,10 @@ class MainWindow(QMainWindow):
         self.signup_form.loginLinkActivated.connect(self._show_login_view)
         self.signup_form.guestAccessRequested.connect(self._handle_guest_access)
 
-        self.play_button.clicked.connect(self._show_login_view)  # Connect play button to login view
+        self.play_button.clicked.connect(self._handle_play_button_click) # NEW: Connect to handler
+
+        self.windowModule.homeButtonClicked.connect(self._navigate_to_homepage) # Connect home button signal
+        self.windowModule.logoutButtonClicked.connect(self._handle_logout) # Connect logout button signal
 
         self._show_homepage()  # Show homepage initially
 
@@ -93,7 +97,7 @@ class MainWindow(QMainWindow):
         )
 
         # Setup "LETS PLAY!" button
-        self.play_button = MyButton(text='LETS PLAY!', fontSize=46, padding='52px 70px')
+        self.play_button = MyButton(text='LETS PLAY!', fontSize=46, padding='52px 70px', font='suburbia')
         self.windowModule.addChildWidget(
             self.play_button,
             Constants.BOARD_WIDTH / 2,
@@ -182,6 +186,8 @@ class MainWindow(QMainWindow):
         if self.board: self.board.hide()
         if self.rules_toggle: self.rules_toggle.hide()
         if self.game_over_overlay: self.game_over_overlay.hide() # Ensure overlay is hidden
+        self.windowModule.hideHomeButton() # Hide home button on homepage
+        self.windowModule.update_username_display(self.current_username) # Update username display
 
     def _show_login_view(self):
         self.image.hide()
@@ -192,6 +198,8 @@ class MainWindow(QMainWindow):
         if self.board: self.board.hide()
         if self.rules_toggle: self.rules_toggle.hide()
         if self.game_over_overlay: self.game_over_overlay.hide()
+        self.windowModule.showHomeButton() # Show home button
+        self.windowModule.update_username_display(self.current_username) # Persist username if logged in, or hide if not
 
     def _show_signup_view(self):
         self.image.hide()
@@ -203,6 +211,8 @@ class MainWindow(QMainWindow):
         if self.board: self.board.hide()
         if self.rules_toggle: self.rules_toggle.hide()
         if self.game_over_overlay: self.game_over_overlay.hide()
+        self.windowModule.showHomeButton() # Show home button
+        self.windowModule.update_username_display(self.current_username) # Persist username if logged in, or hide if not
 
     def _show_game_selection_view(self):
         self.image.hide()
@@ -217,6 +227,8 @@ class MainWindow(QMainWindow):
             self.controller = None
         if self.rules_toggle: self.rules_toggle.hide()
         if self.game_over_overlay: self.game_over_overlay.hide()
+        self.windowModule.showHomeButton() # Show home button
+        self.windowModule.update_username_display(self.current_username) # Show username
 
     def _show_board_view(self):
         self.image.hide()
@@ -230,10 +242,22 @@ class MainWindow(QMainWindow):
             self.rules_toggle.show()
             self._update_violated_rules()
         if self.game_over_overlay: self.game_over_overlay.hide()
+        self.windowModule.showHomeButton() # Show home button
+        self.windowModule.update_username_display(self.current_username) # Show username
+
+    def _handle_play_button_click(self):
+        if self.current_user_id is not None:
+            print(f"User {self.current_user_id} is already logged in. Showing game selection.")
+            self._show_game_selection_view()
+        else:
+            print("No user logged in. Showing login view.")
+            self._show_login_view()
 
     def _handle_guest_access(self):
         print("Guest access requested. Showing game selection.")
         self.current_user_id = None
+        self.current_username = None # Clear username for guest
+        self.windowModule.update_username_display(None) # Hide username display
         self._show_game_selection_view()
 
     def _handle_user_login_attempt(self, username, password):
@@ -243,17 +267,21 @@ class MainWindow(QMainWindow):
 
         if auth_result.code is None:
             self.current_user_id = auth_result.id
+            self.current_username = username # Store username
             print(f"User '{username}' (ID: {self.current_user_id}) logged in successfully.")
             self.login_form.clear_error()
+            self.windowModule.update_username_display(self.current_username) # Display username
             self._show_game_selection_view()
         else:
             self.current_user_id = None
+            self.current_username = None # Clear username on failed login
             error_message = {
                 102: "User not found.",
                 103: "Incorrect password."
             }.get(auth_result.code, "Login failed.")
             print(f"Login failed for {username}: {error_message}")
             self.login_form.display_error(error_message)
+            self.windowModule.update_username_display(None) # Hide username display
 
     def _handle_user_signup_attempt(self, username, password):
         print(f"Attempting to sign up user: {username}")
@@ -262,6 +290,7 @@ class MainWindow(QMainWindow):
 
         if auth_result.code is None:
             print(f"User '{username}' created successfully.")
+            # Username is not displayed yet, user needs to log in
             self._show_login_view()
         else:
             error_message = {
@@ -269,6 +298,7 @@ class MainWindow(QMainWindow):
             }.get(auth_result.code, "Signup failed.")
             print(f"Signup failed for {username}: {error_message}")
             self.signup_form.display_error(error_message)
+            # No username to display yet
 
     def _handle_game_start(self, game_type, difficulty):
         print(f"Starting game: {game_type} at difficulty {difficulty}")
@@ -420,6 +450,20 @@ class MainWindow(QMainWindow):
             self.board.update_board(self.controller.get_board())
             self.board.show_possible_moves([])
             self._show_board_view()
+
+    def _navigate_to_homepage(self):
+        # Potentially add any cleanup logic here if views need it before switching
+        self._show_homepage()
+    
+    def _handle_logout(self):
+        print("User logging out.")
+        self.current_user_id = None
+        self.current_username = None
+        self.windowModule.update_username_display(None) # This will hide username and logout button
+        if self.login_form: # Ensure login_form exists
+            self.login_form.clear_fields() # Clear login form fields
+        # Home button visibility is handled by _show_login_view indirectly
+        self._show_login_view()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

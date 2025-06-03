@@ -14,15 +14,13 @@ class BoardCell(QFrame):
         self.setFixedSize(QSize(Constants.CELL_SIZE, Constants.CELL_SIZE))
         self.setCursor(Qt.PointingHandCursor)
 
-        # Calculate new dimensions for 1.5x scaling
         current_image_area_dimension = Constants.CELL_SIZE - 2 * Constants.PADDING
         self.target_image_dimension = int(current_image_area_dimension * 1.4)
-        # Ensure target_image_dimension doesn't exceed CELL_SIZE
         if self.target_image_dimension > Constants.CELL_SIZE:
             self.target_image_dimension = Constants.CELL_SIZE
         
         new_layout_padding = (Constants.CELL_SIZE - self.target_image_dimension) // 2
-        if new_layout_padding < 0: # Should not happen if target_image_dimension is capped
+        if new_layout_padding < 0:
             new_layout_padding = 0
 
         backgroundColor = Colors.PRIMARY if cellType == CellType.LIGHT else Colors.SECONDARY
@@ -73,26 +71,21 @@ class BoardCell(QFrame):
         imagePath = self._find_image_path(assets_dir, image)
         if not imagePath:
             self.imageLabel.clear()
-            print(f"Warning: Image file {image} not found in {assets_dir} or subdirectories.")
             return
 
         pixmap = QPixmap(imagePath)
         if pixmap.isNull():
             self.imageLabel.clear()
-            print(f"Warning: Could not load pixmap for {imagePath}.")
             return
 
         image_filename = os.path.basename(imagePath)
 
         if image_filename in PLAYER_PIECE_FILES:
-            # Player pieces are scaled to the target dimension
             scaledPixmap = pixmap.scaled(self.target_image_dimension, self.target_image_dimension, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         else:
-            # Other images (like indicators) respect their intrinsic size, capped by target_image_dimension
             if pixmap.width() <= self.target_image_dimension and pixmap.height() <= self.target_image_dimension:
-                scaledPixmap = pixmap  # Use original size if it fits
+                scaledPixmap = pixmap
             else:
-                # Scale down if too large, maintaining aspect ratio
                 scaledPixmap = pixmap.scaled(self.target_image_dimension, self.target_image_dimension, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         self.imageLabel.setPixmap(scaledPixmap)

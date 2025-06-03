@@ -26,5 +26,4 @@ class MenuContainer(QFrame):
         self.layout.addWidget(widget, alignment=Qt.AlignHCenter)
 
     def sizeHint(self) -> QSize:
-        # Return the fixed size explicitly to ensure correct layout behavior
         return QSize(self._fixed_width, self._fixed_height)
