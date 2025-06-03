@@ -24,7 +24,7 @@ class TicTacToe(BaseGame):
             return True
         return False
 
-    def get_possible_moves(self, player_mark=None): # player_mark is not used here but kept for consistency
+    def get_possible_moves(self, player_mark=None):
         """Returns a list of all possible moves (empty cells)."""
         moves = []
         for r in range(self.board_size):
@@ -100,7 +100,7 @@ class TicTacToe(BaseGame):
 
     def get_ai_move(self):
         """Returns the AI's move using Minimax algorithm."""
-        ai = Minimax(self, max_depth=3)  # Default depth, adjusted by GameController
+        ai = Minimax(self, max_depth=3)
         return ai.find_best_move(self.ai_player_mark)
 
     def __str__(self):

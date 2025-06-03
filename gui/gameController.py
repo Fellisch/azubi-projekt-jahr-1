@@ -57,7 +57,6 @@ class GameController:
             return self._handle_tictactoe_click(position)
 
     def _handle_dame_click(self, position):
-        # Part 1: A piece is currently selected
         if self.selected_piece is not None:
             current_selected_coord = self.selected_piece
 
@@ -68,7 +67,6 @@ class GameController:
                     break
 
             if chosen_move:
-                # 1. CLICKED A VALID MOVE DESTINATION
                 valid, further_capture = self.game.make_move(chosen_move, self.game.human_player_piece)
                 if valid:
                     win_status = self.game.check_win_condition()
@@ -93,24 +91,19 @@ class GameController:
             
             elif self.game.board[position[0]][position[1]] == self.game.human_player_piece and \
                  position != current_selected_coord:
-                # 2. CLICKED ANOTHER OWN PIECE
                 self.reset_selection(clear_turn_mandatory_captures=True)
                 self.mandatory_human_captures = self._get_mandatory_human_captures()
-                # Fall through to Part 2 to select the new piece at 'position'.
             
             elif position == current_selected_coord:
-                # 3. CLICKED THE CURRENTLY SELECTED PIECE AGAIN (DESELECT)
                 self.reset_selection(clear_turn_mandatory_captures=True)
                 self.mandatory_human_captures = self._get_mandatory_human_captures()
                 return None, None
             
             else:
-                # 4. CLICKED ANYWHERE ELSE (empty square, opponent piece)
                 self.reset_selection(clear_turn_mandatory_captures=True)
                 self.mandatory_human_captures = self._get_mandatory_human_captures()
                 return None, None
 
-        # Part 2: No piece is selected (self.selected_piece is None)
         if self.game.board[position[0]][position[1]] == self.game.human_player_piece:
             if self.mandatory_human_captures:
                 can_make_mandatory_capture = any(m[1] == position for m in self.mandatory_human_captures)

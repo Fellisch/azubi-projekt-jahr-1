@@ -9,19 +9,15 @@ class ImageWidget(QLabel):
     def __init__(self, image_name, scaled=True, max_size=None, alignment=Qt.AlignCenter, parent=None):
         super().__init__(parent)
 
-        # Base 'assets' directory
         base_dir = os.path.dirname(os.path.abspath(__file__))
         assets_dir = os.path.join(base_dir, "assets")
 
-        # Resolve full path, searching all subdirectories
         image_path = self._find_image_path(assets_dir, image_name)
         if not image_path:
-            # print(f"[ImageWidget] Image '{image_name}' not found in assets.") # Silently fail or log appropriately
             return
 
         pixmap = QPixmap(image_path)
         if pixmap.isNull():
-            # print(f"[ImageWidget] Failed to load image: {image_path}") # Silently fail or log appropriately
             return
 
         if max_size:

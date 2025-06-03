@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QListWidget, QListWidgetItem, QVBoxLayout, QLabel, QApplication
 from PySide6.QtGui import QColor, QCursor, QMouseEvent
 from PySide6.QtCore import Qt, Signal, QPoint, QEvent, QRect
-from gui.core.confiq import Colors # Import Colors
+from gui.core.confiq import Colors
 
 class CustomListWidget(QWidget):
     selectionChanged = Signal(str)
@@ -18,7 +18,6 @@ class CustomListWidget(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        # Label that looks like the closed dropdown
         self.display_label = QLabel("▼ " + self.title)
         self.display_label.setStyleSheet(f"""
             QLabel {{
@@ -36,7 +35,6 @@ class CustomListWidget(QWidget):
         self.display_label.setCursor(QCursor(Qt.PointingHandCursor))
         self.layout.addWidget(self.display_label)
 
-        # The popup list widget (initially hidden)
         self.list_widget = QListWidget()
         self.list_widget.setWindowFlags(Qt.Popup)
         self.list_widget.setFocusPolicy(Qt.NoFocus)
@@ -54,7 +52,6 @@ class CustomListWidget(QWidget):
             QListWidget::item {{
                 padding: 12px;
                 text-align: center;
-                /* Item background/foreground set in add_items */
             }}
             QListWidget::item:selected {{
                 background-color: {Colors.CTA_HOVER}; 
@@ -69,7 +66,6 @@ class CustomListWidget(QWidget):
         self.list_widget.setSelectionMode(QListWidget.SingleSelection)
         self.add_items(self.items)
 
-        # Connections
         self.display_label.mousePressEvent = self.toggle_list
         self.list_widget.itemClicked.connect(self.handle_item_clicked)
 
@@ -78,8 +74,8 @@ class CustomListWidget(QWidget):
         self.list_widget.clear()
         for text in items:
             item = QListWidgetItem(text)
-            item.setBackground(QColor(Colors.PRIMARY)) # Use Colors.PRIMARY for item background
-            item.setForeground(QColor(Colors.FONT_PRIMARY)) # Use Colors.FONT_PRIMARY for item text
+            item.setBackground(QColor(Colors.PRIMARY))
+            item.setForeground(QColor(Colors.FONT_PRIMARY))
             self.list_widget.addItem(item)
 
     def toggle_list(self, event=None):
@@ -88,7 +84,7 @@ class CustomListWidget(QWidget):
         else:
             pos = self.display_label.mapToGlobal(self.display_label.rect().bottomLeft())
             self.list_widget.move(pos)
-            self.list_widget.resize(self.display_label.width(), min(150, len(self.items) * (34))) # Adjusted height based on padding 12px * 2 + 10px text approx
+            self.list_widget.resize(self.display_label.width(), min(150, len(self.items) * (34)))
             self.list_widget.show()
             self.is_open = True
             QApplication.instance().installEventFilter(self)
@@ -124,19 +120,15 @@ class CustomListWidget(QWidget):
             if isinstance(event, QMouseEvent):
                 click_pos = event.globalPosition().toPoint()
 
-                # Global rectangle of the display_label
                 display_label_global_rect = QRect(self.display_label.mapToGlobal(QPoint(0,0)), self.display_label.size())
                 
-                # Global rectangle of the list_widget (it's a popup, so geometry is global)
                 list_widget_global_rect = self.list_widget.geometry()
 
-                # If click is on the display_label or on the list_widget, let them handle it (event filter does nothing special)
                 if display_label_global_rect.contains(click_pos) or \
                    list_widget_global_rect.contains(click_pos):
-                    return False # Event not handled by this specific filter logic; allow it to propagate
+                    return False
                 
-                # Otherwise, the click is outside both relevant widgets. Close the list.
                 self._close_list_and_cleanup()
-                return True # Event handled by this filter (closed the list)
+                return True
         
-        return super().eventFilter(watched, event) # Default event filtering
+        return super().eventFilter(watched, event)

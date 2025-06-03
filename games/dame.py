@@ -73,7 +73,7 @@ class Dame(BaseGame):
                         self.board[land_row][land_col] == EMPTY and \
                         self._is_valid_coord(jump_row, jump_col) and \
                         self.board[jump_row][jump_col] == opponent_piece:
-                    if drow == direction: # Standard pieces only capture forward
+                    if drow == direction:
                         possible_captures.append(["capture", (row, col), (land_row, land_col), [(jump_row, jump_col)]])
         return possible_captures
 
@@ -98,7 +98,7 @@ class Dame(BaseGame):
         piece_forward_direction = 1 if piece_making_move == self.human_player_piece else -1
         for dr_one_step in [-1, 1]: 
             for dc_one_step in [-1, 1]: 
-                if dr_one_step != piece_forward_direction: # Standard pieces only chain capture forward
+                if dr_one_step != piece_forward_direction:
                     continue
                 opponent_r, opponent_c = r_start + dr_one_step, c_start + dc_one_step
                 land_r, land_c = r_start + 2*dr_one_step, c_start + 2*dc_one_step
@@ -186,10 +186,8 @@ class Dame(BaseGame):
     def current_player_piece(self):
         return self.human_player_piece if self.current_player == "human" else self.ai_player_piece
 
-    def get_ai_move(self): # This method is called by GameController if it's not using Minimax directly
+    def get_ai_move(self):
         from ai.minimax import Minimax
-        # GameController will set the actual depth based on difficulty
-        # This is a fallback or direct-call scenario
         ai = Minimax(self, max_depth=3) 
         best_move = ai.find_best_move(self.ai_player_piece)
         return best_move 

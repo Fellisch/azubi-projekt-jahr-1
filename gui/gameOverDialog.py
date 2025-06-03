@@ -26,7 +26,7 @@ class GameOverOverlayWidget(QWidget):
             if loaded_bold_families:
                 self.font_family = loaded_bold_families[0]
         else:
-            pass # Warning: Failed to load font
+            pass
 
         self.status_label_font = QFont(self.font_family, 20, QFont.Bold)
         self.title_font = QFont(self.font_family, 16, QFont.Bold)
@@ -137,7 +137,6 @@ class GameOverOverlayWidget(QWidget):
                         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
         except Exception as e:
-            # print(f"Error populating scoreboard in GameOverOverlayWidget: {e}") # Intentionally keep this print for now as it's an exception handler
             self.scoreboardTable.setRowCount(1)
             self.scoreboardTable.setColumnCount(1)
             error_item = QTableWidgetItem("Could not load scoreboard.")
@@ -163,7 +162,6 @@ if __name__ == '__main__':
     mock_difficulty = 2
 
     def mock_getPlayersWithMostWins_for_test(gamemode, difficulty):
-        # print(f"Mock mock_getPlayersWithMostWins_for_test called with gamemode={{gamemode}}, difficulty={{difficulty}}")
         return [
             ("PlayerA", 10, 2),
             ("PlayerB", 8, 1),
@@ -177,9 +175,9 @@ if __name__ == '__main__':
     dialog = GameOverOverlayWidget()
     
     def on_restart():
-        pass # Restart chosen
+        pass
     def on_main_menu():
-        pass # Main Menu chosen
+        pass
 
     dialog.restartClicked.connect(on_restart)
     dialog.mainMenuClicked.connect(on_main_menu)

@@ -47,7 +47,7 @@ class WindowModule(QWidget):
             custom_font = QFont(font_family, 18)
             self.navbarLabel.setFont(custom_font)
         else:
-            pass # Failed to load Suburbia font
+            pass
         navbarLayout.addWidget(self.navbarLabel)
 
         navbarLayout.addStretch(1)
@@ -63,7 +63,7 @@ class WindowModule(QWidget):
             username_font = QFont(font_family_suburbia, 20)
             self.usernameLabel.setFont(username_font)
         else:
-            pass # Failed to apply Suburbia font to username label - font not loaded.
+            pass
         navbarLayout.addWidget(self.usernameLabel)
         self.usernameLabel.hide()
 
@@ -156,9 +156,6 @@ class WindowModule(QWidget):
         elif pivot == Pivot.BOTTOM_RIGHT:
             actual_pos_x = x - width
             actual_pos_y = y - height
-        else:
-            actual_pos_x = x
-            actual_pos_y = y
 
         widget.move(int(actual_pos_x), int(actual_pos_y))
         widget.show()

@@ -6,13 +6,12 @@ from gui.myButton import MyButton, ButtonType
 from gui.core.confiq import Colors
 
 class SignupForm(MenuContainer):
-    # Signals: username, password
     signupAttempted = Signal(str, str)
     loginLinkActivated = Signal()
     guestAccessRequested = Signal()
 
     def __init__(self, parent=None):
-        super().__init__(parent, padding=40) # Same padding as LoginForm
+        super().__init__(parent, padding=40)
 
         self.usernameInput = InputField(placeholder_text="Enter Username...")
         self.addWidget(self.usernameInput)
@@ -20,10 +19,6 @@ class SignupForm(MenuContainer):
         self.passwordInput = InputField(placeholder_text="Password...", is_password=True)
         self.addWidget(self.passwordInput)
         
-        # Optional: Add a "Confirm Password" field if desired (not in SignupScreen.jpeg)
-        # self.confirmPasswordInput = InputField(placeholder_text="Confirm Password...", is_password=True)
-        # self.addWidget(self.confirmPasswordInput)
-
         self.layout.addSpacing(20)
 
         self.signupBtnMain = MyButton(
@@ -42,17 +37,14 @@ class SignupForm(MenuContainer):
         self.addWidget(self.infoLabel)
 
         self.loginLinkBtn = MyButton(
-            text='login here', # Text from SignupScreen.jpeg, might need 'or' if strictly following image text
+            text='login here',
             button_type=ButtonType.LINK,
             fontSize=16,
             text_color=Colors.FONT_PRIMARY
         )
         self.addWidget(self.loginLinkBtn)
         
-        # The "or" text from "login here or" could be a separate QLabel if exact match is needed
-        # Or, the loginLinkBtn text could be "login here or"
-
-        self.layout.addStretch(1) # Pushes guest button to bottom
+        self.layout.addStretch(1)
 
         self.guestBtn = MyButton(
             text='Play as Guest',
@@ -65,7 +57,6 @@ class SignupForm(MenuContainer):
         )
         self.addWidget(self.guestBtn)
 
-        # Connect buttons
         self.signupBtnMain.clicked.connect(self.handle_signup_attempt)
         self.loginLinkBtn.clicked.connect(self.handle_login_link_activated)
         self.guestBtn.clicked.connect(self.handle_guest_access)

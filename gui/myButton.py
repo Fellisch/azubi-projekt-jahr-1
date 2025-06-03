@@ -26,15 +26,14 @@ class MyButton(QPushButton):
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
             self.setFont(QFont(font_family, fontSize))
         else:
-            pass # Failed to load font
+            pass
 
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
         if button_type == ButtonType.NORMAL:
-            # Use provided colors or default
             bg_color = background_color if background_color else Colors.TERTIARY
             final_border_color = border_color if border_color else Colors.SECONDARY
-            final_text_color = text_color # Already has a default
+            final_text_color = text_color
 
             self.setStyleSheet(f"""
                 QPushButton {{
@@ -45,17 +44,17 @@ class MyButton(QPushButton):
                     padding: {padding};
                 }}
             """)
-            if borderWidth > 0: # Only add shadow if there's a border that implies elevation
+            if borderWidth > 0:
                 shadow = QGraphicsDropShadowEffect(self)
                 shadow.setOffset(0, 4)
                 shadow.setBlurRadius(4)
                 shadow.setColor(QColor(0, 0, 0, 64))
                 self.setGraphicsEffect(shadow)
             else:
-                self.setGraphicsEffect(None) # No shadow if no border width
+                self.setGraphicsEffect(None)
 
         elif button_type == ButtonType.LINK:
-            link_text_color = text_color if text_color != Colors.FONT_PRIMARY else "#0023C7" # Default to blue if not overridden
+            link_text_color = text_color if text_color != Colors.FONT_PRIMARY else "#0023C7"
             self.setStyleSheet(f"""
                 QPushButton {{
                     color: {link_text_color};
@@ -65,7 +64,7 @@ class MyButton(QPushButton):
                     text-decoration: underline;
                 }}
                 QPushButton:hover {{
-                    color: {Colors.CTA_HOVER}; /* Or another hover color for links */
+                    color: {Colors.CTA_HOVER};
                 }}
             """)
             self.setGraphicsEffect(None)
