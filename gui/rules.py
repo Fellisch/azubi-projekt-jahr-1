@@ -1,7 +1,7 @@
 import os
-from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QFrame
+from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QFrame, QScrollArea
 from PySide6.QtGui import QIcon, QFontDatabase, QFont
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Qt
 from gui.rule import Rule
 from gui.core.confiq import Colors
 
@@ -18,13 +18,42 @@ class RulesToggle(QWidget):
         self.container.setGeometry(0, 0, 250, 290)
         self.container.setStyleSheet("background-color: transparent;")
 
-        self.rulesWidget = QWidget(self.container)
+        self.rulesWidget = QScrollArea(self.container)
         self.rulesWidget.setGeometry(0, 0, 231, 235)
+        self.rulesWidget.setWidgetResizable(True)
+        self.rulesWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.rulesWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.rulesWidget.setStyleSheet(f"""
-            background-color: {Colors.SECONDARY};
-            border-radius: 8px;
+            QScrollArea {{
+                background-color: {Colors.SECONDARY};
+                border-radius: 8px;
+                border: none; 
+            }}
+            QScrollBar:vertical {{
+                border: none;
+                background: transparent; 
+                width: 8px;
+                margin: 0px 0px 0px 0px; 
+            }}
+            QScrollBar::handle:vertical {{
+                background: {Colors.PRIMARY}; 
+                min-height: 20px;
+                border-radius: 4px;
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+                border: none;
+                background: none;
+            }}
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                background: none;
+            }}
         """)
-        self.rulesLayout = QVBoxLayout(self.rulesWidget)
+        
+        self.rulesContentHolder = QWidget() 
+        self.rulesContentHolder.setStyleSheet("background-color: transparent;")
+
+        self.rulesLayout = QVBoxLayout(self.rulesContentHolder)
         self.rulesLayout.setContentsMargins(10, 10, 10, 10)
         self.rulesLayout.setSpacing(8)
 
@@ -50,6 +79,8 @@ class RulesToggle(QWidget):
             rule.setFont(self.rules_text_qfont)
             self.rules.append(rule)
             self.rulesLayout.addWidget(rule)
+
+        self.rulesWidget.setWidget(self.rulesContentHolder)
 
         self.rulesWidget.setVisible(False)
 
