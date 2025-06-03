@@ -26,80 +26,86 @@ class Minimax:
         beta = float('inf')
 
         current_live_game = self.game_logic_instance
-        possible_first_moves = current_live_game.get_all_possible_moves(self.ai_player_piece) if hasattr(current_live_game, 'get_all_possible_moves') else current_live_game.get_possible_moves(self.ai_player_piece)
+
+        if current_live_game.__class__.__name__ == "TicTacToe":
+            possible_first_moves = current_live_game.get_possible_moves(self.ai_player_piece)
+            possible_first_moves = self._sort_moves(possible_first_moves, current_live_game, self.ai_player_piece)
+            clone_func = lambda g: g.clone()
+        else:  # Dame oder andere Spiele
+            possible_first_moves = current_live_game.get_all_possible_moves(self.ai_player_piece) if hasattr(current_live_game, 'get_all_possible_moves') else current_live_game.get_possible_moves(self.ai_player_piece)
+            clone_func = lambda g: copy.deepcopy(g)
 
         if not possible_first_moves:
             return None
 
         for move in possible_first_moves:
-            simulated_game_after_ai_move = copy.deepcopy(current_live_game)
-
-            if simulated_game_after_ai_move.__class__.__name__ == "TicTacToe":
-                simulated_game_after_ai_move.make_move(move, self.ai_player_piece)
-            elif simulated_game_after_ai_move.__class__.__name__ == "Dame":
-                simulated_game_after_ai_move.make_move(move, self.ai_player_piece)
-            
+            simulated_game_after_ai_move = clone_func(current_live_game)
+            simulated_game_after_ai_move.make_move(move, self.ai_player_piece)
             eval_score = self._minimax_recursive(simulated_game_after_ai_move, self.max_depth - 1, False, alpha, beta)
-
             if eval_score > best_eval_score:
                 best_eval_score = eval_score
                 best_move_found = move
-
             alpha = max(alpha, eval_score)
 
         return best_move_found
 
     def _minimax_recursive(self, game_state, depth, is_maximizing_player_turn, alpha, beta):
         if depth == 0 or game_state.is_game_over():
-            current_eval = game_state.evaluate_board(self.ai_player_piece)
-
-            if current_eval == float('inf'):
-                return self.WIN_BASE_SCORE + depth
-            elif current_eval == float('-inf'):
-                return -self.WIN_BASE_SCORE - depth
-            else:
-                return current_eval
+            return game_state.evaluate_board(self.ai_player_piece)
 
         current_recursive_turn_piece = self._get_current_turn_piece(game_state, is_maximizing_player_turn)
-
         if current_recursive_turn_piece is None:
             return 0
 
-        possible_moves = game_state.get_all_possible_moves(current_recursive_turn_piece) if hasattr(game_state, 'get_all_possible_moves') else game_state.get_possible_moves(current_recursive_turn_piece)
+        if game_state.__class__.__name__ == "TicTacToe":
+            possible_moves = game_state.get_possible_moves(current_recursive_turn_piece)
+            possible_moves = self._sort_moves(possible_moves, game_state, current_recursive_turn_piece)
+            clone_func = lambda g: g.clone()
+        else:
+            possible_moves = game_state.get_all_possible_moves(current_recursive_turn_piece) if hasattr(game_state, 'get_all_possible_moves') else game_state.get_possible_moves(current_recursive_turn_piece)
+            clone_func = lambda g: copy.deepcopy(g)
 
         if not possible_moves:
-            if is_maximizing_player_turn: # AI (maximizing) cannot move
-                return -self.WIN_BASE_SCORE - depth # Penalize inability to move like a loss
-            else: # Opponent (minimizing) cannot move
-                return self.WIN_BASE_SCORE + depth # Reward opponent's inability to move like a win
+            if is_maximizing_player_turn:
+                return -self.WIN_BASE_SCORE - depth
+            else:
+                return self.WIN_BASE_SCORE + depth
 
         if is_maximizing_player_turn:
             max_eval = -float('inf')
             for move in possible_moves:
-                next_game_state = copy.deepcopy(game_state)
-                if next_game_state.__class__.__name__ == "TicTacToe":
-                    next_game_state.make_move(move, current_recursive_turn_piece)
-                elif next_game_state.__class__.__name__ == "Dame":
-                    next_game_state.make_move(move, current_recursive_turn_piece)
-
+                next_game_state = clone_func(game_state)
+                next_game_state.make_move(move, current_recursive_turn_piece)
                 evaluation = self._minimax_recursive(next_game_state, depth - 1, False, alpha, beta)
                 max_eval = max(max_eval, evaluation)
                 alpha = max(alpha, evaluation)
                 if beta <= alpha:
                     break
             return max_eval
-        else: # Minimizing player's turn
+        else:
             min_eval = float('inf')
             for move in possible_moves:
-                next_game_state = copy.deepcopy(game_state)
-                if next_game_state.__class__.__name__ == "TicTacToe":
-                    next_game_state.make_move(move, current_recursive_turn_piece)
-                elif next_game_state.__class__.__name__ == "Dame":
-                    next_game_state.make_move(move, current_recursive_turn_piece)
-
+                next_game_state = clone_func(game_state)
+                next_game_state.make_move(move, current_recursive_turn_piece)
                 evaluation = self._minimax_recursive(next_game_state, depth - 1, True, alpha, beta)
                 min_eval = min(min_eval, evaluation)
                 beta = min(beta, evaluation)
                 if beta <= alpha:
                     break
             return min_eval
+
+    def _sort_moves(self, moves, game_state, player_mark):
+        # Nur für TicTacToe sinnvoll
+        def move_score(move):
+            r, c = move
+            neighbors = 0
+            for dr in [-1, 0, 1]:
+                for dc in [-1, 0, 1]:
+                    if dr == 0 and dc == 0:
+                        continue
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < game_state.board_size and 0 <= nc < game_state.board_size:
+                        if game_state.board[nr][nc] != '':
+                            neighbors += 1
+            return -neighbors
+        return sorted(moves, key=move_score)
