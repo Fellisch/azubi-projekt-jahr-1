@@ -44,7 +44,7 @@ class GridWindowModule(WindowModule):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Stress Game Prototype")
+        self.setWindowTitle("Strategy Games")
         self.setFixedSize(Constants.BOARD_WIDTH, Constants.BOARD_HEIGHT)
         self.setStyleSheet(f"background-color: {Colors.TERTIARY};")
 
@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
         )
 
         # Setup "LETS PLAY!" button
-        self.play_button = MyButton(text='LETS PLAY!', fontSize=46, padding='52px 70px')
+        self.play_button = MyButton(text='LETS PLAY!', fontSize=46, padding='52px 70px', font='suburbia')
         self.windowModule.addChildWidget(
             self.play_button,
             Constants.BOARD_WIDTH / 2,

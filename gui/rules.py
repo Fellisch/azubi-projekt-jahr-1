@@ -1,6 +1,6 @@
 import os
 from PySide6.QtWidgets import QWidget, QPushButton, QVBoxLayout, QFrame
-from PySide6.QtGui import QIcon # Added QIcon
+from PySide6.QtGui import QIcon, QFontDatabase, QFont # Added QIcon
 from PySide6.QtCore import QSize # Added QSize
 from gui.rule import Rule  # import Rule class
 from gui.core.confiq import Colors
@@ -28,12 +28,29 @@ class RulesToggle(QWidget):
         self.rulesLayout.setContentsMargins(10, 10, 10, 10)
         self.rulesLayout.setSpacing(8)
 
+        # --- Font Setup for Rules ---
+        self.rule_font_family = QFont().family() # Fallback
+        current_font_dir = os.path.dirname(os.path.abspath(__file__))
+        fonts_dir = os.path.join(current_font_dir, "assets", "fonts")
+        
+        rule_bold_font_filename = "JetBrainsMono-Bold.ttf"
+        rule_bold_font_path = os.path.join(fonts_dir, rule_bold_font_filename)
+
+        rule_bold_font_id = QFontDatabase.addApplicationFont(rule_bold_font_path)
+        if rule_bold_font_id != -1:
+            loaded_rule_bold_families = QFontDatabase.applicationFontFamilies(rule_bold_font_id)
+            if loaded_rule_bold_families:
+                self.rule_font_family = loaded_rule_bold_families[0]
+        
+        self.rules_text_qfont = QFont(self.rule_font_family, 12, QFont.Bold) # Using 12pt size
+
         self.rules = []
         # Fetch rules dynamically from the game instance
         rules_text_list = self.game.get_rules() # Expecting a list of strings now
         for idx, rule_text in enumerate(rules_text_list):
             # Assuming Rule can take a rule_id and text, using index as a simple ID
             rule = Rule(rule_id=idx, text=rule_text.strip(), bold=False)
+            rule.setFont(self.rules_text_qfont) # Apply the custom font
             self.rules.append(rule)
             self.rulesLayout.addWidget(rule)
 
