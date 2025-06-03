@@ -2,11 +2,6 @@ PySide6==6.9.0
 PySide6_Addons==6.9.0
 PySide6_Essentials==6.9.0
 shiboken6==6.9.0
-# Basic dependencies, will be updated as the project grows
-# For GUI, if not using Tkinter (e.g., PyQt5, Kivy)
-# Example: PyQt5==5.15.0
-
-# For password hashing
 bcrypt
 sqlalchemy
 dotenv
