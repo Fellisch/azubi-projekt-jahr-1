@@ -74,7 +74,12 @@ class Dame(BaseGame):
                         self._is_valid_coord(jump_row, jump_col) and \
                         self.board[jump_row][jump_col] == opponent_piece:
                     if drow == direction:
-                        possible_captures.append(["capture", (row, col), (land_row, land_col), [(jump_row, jump_col)]])
+                        possible_captures.append([
+                                "capture",
+                                (row, col),
+                                (land_row, land_col),
+                                [(jump_row, jump_col)]
+                            ])
         return possible_captures
 
     def _get_regular_moves(self, pieces, direction):
